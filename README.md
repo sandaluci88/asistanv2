@@ -1,70 +1,49 @@
-# Sandaluci ASistan 🚀
+# Sandaluci ASistan: Akıllı Üretim Koordinatörü 🚀
 
-Sandaluci firması için özel olarak tasarlanmış, **Yalın Kültür (Lean Culture)** ve **Stratejik Hizalama (Hoshin Kanri)** prensiplerini benimsemiş zeki bir yönetici asistanı ve operasyon yönetim sistemidir.
+Sandaluci firması için özel olarak tasarlanmış, **Kazakistan merkezli** operasyonlarda **Yalın Kültür (Lean Culture)** ve **Stratejik Hizalama (Hoshin Kanri)** prensiplerini uçtan uca yöneten zeki bir asistan sistemidir.
 
-## 🌟 Öne Çıkan Özellikler
+## 🌟 Öne Çıkan Özellikler (Mart 2026 Güncellemesi)
 
-### 1. Akıllı Yönetim Paneli (Dashboard)
+### 1. Akıllı Çoklu Departman Dağıtımı (Multi-Dept Logic)
 
-- **Modern Arayüz:** Next.js 15 ve KokonutUI ile güçlendirilmiş, karanlık mod destekli premium dashboard.
-- **Canlı Takip:** [sanasist.turklawai.com](https://sanasist.turklawai.com) adresi üzerinden veya Supabase Realtime ile siparişlerin ve üretim durumunun anlık izlenmesi.
-- **Analitik:** Sipariş istatistikleri, personel performans metrikleri ve departman bazlı yoğunluk grafikleri.
-- **Güvenlik:** Supabase Auth ve Next.js Middleware ile korunan yetkili erişim katmanı.
+- **Problem Çözümü:** Bir ürünün (örneğin döşemeli sandalye) üretim sürecini yapay zeka ile parçalara ayırır.
+- **Dağıtım:** İskelet için **Karkas/Metal**, kılıf için **Dikişhane**, final montaj için **Döşemehane** birimlerine saniyeler içinde ayrı ayrı iş emirlerini resimli olarak gönderir.
+- **Hata Payı:** "Hızlı değil, doğru iş" prensibiyle karmaşık siparişlerde parça kaybını sıfıra indirir.
 
-### 2. Akıllı Sipariş ve Koordinasyon
+### 2. Çok Dillilik ve Bölgesel Adaptasyon
 
-- **Çoklu Format Desteği:** Gmail üzerinden gelen siparişlerin metin veya Excel (.xlsx) formatında otomatik işlenmesi.
-- **Vektör Hafızası (Qdrant):** Ürün görsellerinin vektörleştirilerek yapay zeka hafızasına kaydedilmesi ve benzer ürün sorgulama yeteneği.
-- **Otomatik İş Emri (PDF):** Her departman için (Döşeme, Dikişhane, Kumaş vb.) resimli, profesyonel PDF iş emirlerinin otomatik oluşturulması.
-- **Görsel Albüm:** Sipariş görsellerinin Telegram üzerinden düzenli albümler halinde ilgili birimlere iletilmesi.
+- **Dinamik Dil:** Kullanıcının diline göre (Türkçe veya Rusça) otomatik geçiş yapar.
+- **Kazakistan Operasyonu:** Personelin Rusça, yönetimin çift dilli olduğu yapıya tam uyumludur.
+- **Akıllı Veri Çekme:** Rusça karakterli müşteri isimlerini ve şehirlerini (Örn: город Жетисай) hatasız işler.
 
-### 3. Ekip Kontrolü ve RBAC
+### 3. Gelişmiş Gmail Entegrasyonu & Filtreleme
 
-- **Rol Tabanlı Erişim:** "Patron" (Administrator) ve "Personel" rolleri arasında net yetki ayrımı.
-- **Whitelist Güvenliği:** Sadece tanımlı Telegram kullanıcı id'lerine hizmet veren güvenlik katmanı.
-- **Periyodik Nabız (Cron):** Sabah planlama, öğlen darboğaz tespiti ve akşam raporlama döngüleri.
+- **Temiz Akış:** Sadece gerçek siparişleri işler; Groq, GitHub, Supabase gibi sistem bildirimlerini otomatik ayıklar.
+- **App Password Güvenliği:** 16 haneli uygulama şifreleri ile güvenli SMTP/IMAP bağlantısı sağlar.
 
-## 🛡️ Güvenlik, Altyapı ve Yapay Zeka Kuralları (Mart 2026 Güncellemesi)
+### 4. Personel ve Parça Başı (Piecework) Sistemi
 
-Proje, kapsamlı bir güvenlik denetiminden (STRIDE) geçirilmiş ve üretim ortamına (VPS) hazır hale getirilmiştir:
+- **Takip:** Personel bazlı (Olga, Barış vb.) parça başı üretim takibi.
+- **Onay Mekanizması:** Kritik üretim aşamalarında yönetici onayı gerektiren iş akışları.
 
-- **Sanitasyon & Sıfırlama:** Tüm veritabanları (Supabase ve JSON) test verilerinden tamamen temizlendi. Proje "sıfır sipariş" mantığıyla yayına hazır hale getirildi. Hardcoded API anahtarları `.env` dosyasına taşındı.
-- **Konteyner Güvenliği:** Docker üzerinde `USER node` (non-root) kullanımı ile güvenlik sertleştirilmiştir.
-- **Kesin Kırmızı Çizgiler (Soul.md):** Ayça asistanının personel ile iş dışı sohbet etmesi, felsefi yorum yapması veya dış dünyadan dedikodu/siyaset gibi bilgi çekmesi **kesin olarak yasaklanmıştır.**
-- **Build Hardening:** TypeScript ve ESLint kontrolleri sıkılaştırılarak hatalı kodun yayına girmesi engellenmiştir.
+## 🛡️ Yönetim ve Devir Bilgileri
 
-## 🛠️ Teknik Stack
+- **SuperAdmin:** Sistem, teslim sonrası **Barış Bey** yetkileriyle yönetilmektedir.
+- **Ayça'nın Ruhu (Soul):** Asistan, sadece iş odaklı, kısa ve net cevaplar verir; felsefi yorum veya iş dışı sohbet kesinlikle yasaktır.
 
-- **Frontend:** Next.js 15, React 19, Tailwind CSS, Lucide React.
-- **Backend:** Node.js, Grammy (Telegram Framework), Supabase (DB & Auth).
-- **AI/ML:** OpenRouter (Gemini 2.0 Flash), Qdrant (Vector Search).
-- **Altyapı:** Docker, Coolify, Gmail IMAP/SMTP.
+## 🛠️ Teknik Altyapı
 
-## 🚀 Kurulum ve Dağıtım
+- **Yapay Zeka:** OpenRouter üzerinden en güncel `google/gemini-3.1-flash-lite-preview` modeli.
+- **Vektör Veritabanı:** Qdrant ile görsel ürün hafızası.
+- **Veritabanı:** Supabase (Realtime destekli).
+- **Deployment:** Docker & Coolify hazır (Dockerfile kök dizindedir).
 
-### 1. Çevre Değişkenleri
+## 🚀 Hızlı Başlangıç
 
-`.env.example` dosyasını `.env` olarak kopyalayın ve gerekli anahtarları doldurun:
-
-- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY`
-- `OPENROUTER_API_KEY`, `QDRANT_API_KEY`
-- `GMAIL_USER`, `GMAIL_PASS` (App Password)
-
-### 2. Docker ile Çalıştırma
-
-```bash
-# Bot ve Dashboard'u ayağa kaldırın
-docker build -t sandaluci-asistan .
-docker run --env-file .env -p 3000:3000 sandaluci-asistan
-```
-
-### 3. Coolify Dağıtımı
-
-- Coolify üzerinde "Dockerize" uygulama olarak ekleyin.
-- Webhook'ları ve Health Check (Port 3000) ayarlarını yapılandırın.
-- `.env` içeriğini Coolify "Variables" sekmesine aktarın.
+1. `.env` dosyasını yapılandırın.
+2. `npm install` ve `npm run build` ile derleyin.
+3. `npm run dev` ile botu ve dashboard'u başlatın.
 
 ---
 
-_Sandaluci Operasyonel Mükemmellik Projesi - 2026_
+_SanaSistans: Geleceğin Mobilya Üretim Teknolojisi - 2026_

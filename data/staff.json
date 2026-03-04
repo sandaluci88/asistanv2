@@ -2,11 +2,10 @@
   {
     "id": "5379d212-b1a1-4493-ac76-818984524807",
     "telegramId": 6030287709,
-    "name": "Barış Bey",
+    "name": "Marina Hanım (Test)",
     "department": "Yönetim",
-    "role": "SuperAdmin",
+    "role": "Admin",
     "phone": null,
-    "isMarina": false,
-    "isBaris": true
+    "isMarina": true
   }
 ]
