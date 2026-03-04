@@ -199,14 +199,14 @@ export class CronService {
         calendarSummary += `\n⏰ ${start} - ${event.summary}`;
       });
     }
-    const message = `☀️ *Günaydın Cenk Bey!*\n\nBugünün üretim planı ve personel yoklaması için Ayça hazır. \n\n📌 *Stratejik Odak:* Bugün "Hoshin Kanri" hedeflerimize uygun olarak üretim darboğazlarını ve israfları (Muda) minimize etmeye odaklanalım.${calendarSummary}`;
+    const message = `☀️ *Günaydın Barış Bey!*\n\nBugünün üretim planı ve personel yoklaması için Ayça hazır. \n\n📌 *Stratejik Odak:* Bugün "Hoshin Kanri" hedeflerimize uygun olarak üretim darboğazlarını ve israfları (Muda) minimize etmeye odaklanalım.${calendarSummary}`;
     await this.bot.api.sendMessage(this.targetChatId, message, {
       parse_mode: "Markdown",
     });
   }
 
   async sendEveningBriefing() {
-    const message = `🌙 *İyi Akşamlar Cenk Bey!*\n\nBugünün üretim raporu hazırlandı. Personel ile akşam check-pointleri tamamlandı. Standartlaştırılmış süreçlerimiz sayesinde yarın daha hızlı olacağız. İyi dinlenmeler! ✨`;
+    const message = `🌙 *İyi Akşamlar Barış Bey!*\n\nBugünün üretim raporu hazırlandı. Personel ile akşam check-pointleri tamamlandı. Standartlaştırılmış süreçlerimiz sayesinde yarın daha hızlı olacağız. İyi dinlenmeler! ✨`;
     await this.bot.api.sendMessage(this.targetChatId, message, {
       parse_mode: "Markdown",
     });
@@ -215,7 +215,7 @@ export class CronService {
   async checkPendingMaterials() {
     const pending = await this.productionService.getPending();
     if (pending.length > 0) {
-      let list = `⚠️ *Cenk Bey, Bekleyen Malzeme Talepleri:*\n\n`;
+      let list = `⚠️ *Barış Bey, Bekleyen Malzeme Talepleri:*\n\n`;
       pending.forEach((item, index) => {
         list += `${index + 1}. ${item.name} (${item.quantity || "N/A"}) - *${item.status}*\n`;
       });

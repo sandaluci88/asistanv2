@@ -44,8 +44,8 @@ bot.use(async (ctx, next) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  const isBoss = allowlist.includes(userId.toString());
   const staffMember = staffService.getStaffByTelegramId(userId);
+  const isBoss = allowlist.includes(userId.toString()) || staffMember?.role === "SuperAdmin";
   const isRegisteredStaff = !!staffMember;
 
   // Context'e rol bilgisini ekleyelim (Opsiyonel: grammy context extension da yapılabilir ama şimdilik basitleştirelim)
@@ -62,7 +62,7 @@ bot.use(async (ctx, next) => {
   // Yetkisiz erişim denemesi
   if (ctx.chat?.type === "private") {
     await ctx.reply(
-      "Merhaba! Ben Ayça. 🙋‍♀️ Şu an sadece Cenk Bey ve kayıtlı Sandaluci personeline hizmet veriyorum.\n\nEğer ekipten biriysen lütfen `/kayit İsim | Departman` komutuyla kendini tanıtır mısın?",
+      "Merhaba! Ben Ayça. 🙋‍♀️ Şu an sadece Barış Bey ve kayıtlı Sandaluci personeline hizmet veriyorum.\n\nEğer ekipten biriysen lütfen `/kayit İsim | Departman` komutuyla kendini tanıtır mısın?",
       { parse_mode: "Markdown" },
     );
   }
@@ -74,6 +74,8 @@ bot.command("durum", (ctx) => commandHandler.handleDurum(ctx));
 bot.command("ajanda", (ctx) => commandHandler.handleAjanda(ctx));
 bot.command("personel", (ctx) => commandHandler.handleStaff(ctx));
 bot.command("kayit", (ctx) => commandHandler.handleRegister(ctx));
+bot.command("sil", (ctx) => commandHandler.handleRemoveStaff(ctx));
+bot.command("dev", (ctx) => commandHandler.handleDev(ctx));
 bot.command("test_briefing", (ctx) => commandHandler.handleTestBriefing(ctx));
 
 // Normal Mesajlar

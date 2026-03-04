@@ -15,7 +15,7 @@ export class CommandHandler {
   }
 
   private isBoss(ctx: Context): boolean {
-    return (ctx as any).role === "boss";
+    return (ctx as any).role === "SuperAdmin" || (ctx as any).role === "boss";
   }
 
   public async handleStart(ctx: Context) {
@@ -27,7 +27,7 @@ export class CommandHandler {
 
     if (isBoss) {
       await ctx.reply(
-        `Hoş geldiniz Cenk Bey! 👋\n\nSandaluci üretim süreçleri ve ekip yönetimi için hazırım.\n\nKullanabileceğiniz Yönetici Komutları:\n/ajanda - Günlük planınız\n/personel - Ekip listesi\n/durum - Üretim durumu\n/kayit - Yeni personel ekle\n/sil - Personel sil`,
+        `Hoş geldiniz Barış Bey! 👋\n\nSandaluci üretim süreçleri ve ekip yönetimi için hazırım.\n\nKullanabileceğiniz Yönetici Komutları:\n/ajanda - Günlük planınız\n/personel - Ekip listesi\n/durum - Üretim durumu\n/kayit - Yeni personel ekle\n/sil - Personel sil\n/dev - Geliştirici Modu (Teknik Analiz)`,
         { parse_mode: "Markdown" },
       );
       return;
@@ -66,14 +66,14 @@ export class CommandHandler {
 
   public async handleAjanda(ctx: Context) {
     if (!this.isBoss(ctx)) {
-      await ctx.reply("🔒 Bu özellik sadece Cenk Bey'in erişimine açıktır.");
+      await ctx.reply("🔒 Bu özellik sadece Barış Bey'in erişimine açıktır.");
       return;
     }
     const events = await this.calendarService.getTodayAgenda();
 
     if (events.length === 0) {
       await ctx.reply(
-        "📅 Bugün için takviminizde planlanmış bir etkinlik bulunmuyor Cenk Bey.",
+        "📅 Bugün için takviminizde planlanmış bir etkinlik bulunmuyor Barış Bey.",
       );
       return;
     }
@@ -106,7 +106,7 @@ export class CommandHandler {
     }
     const staff = this.staffService.getAllStaff();
     if (staff.length === 0) {
-      await ctx.reply("Henüz kayıtlı personel bulunmuyor Cenk Bey.");
+      await ctx.reply("Henüz kayıtlı personel bulunmuyor Barış Bey.");
       return;
     }
 
@@ -121,7 +121,7 @@ export class CommandHandler {
   public async handleRegister(ctx: Context) {
     if (!this.isBoss(ctx)) {
       await ctx.reply(
-        "🔒 Personel kaydı sadece Cenk Bey tarafından yapılabilir.",
+        "🔒 Personel kaydı sadece Barış Bey tarafından yapılabilir.",
       );
       return;
     }
@@ -192,5 +192,41 @@ export class CommandHandler {
     } else {
       await ctx.reply("❌ Bu ID ile kayıtlı personel bulunamadı.");
     }
+  }
+
+  public async handleDev(ctx: Context) {
+    if (!this.isBoss(ctx)) {
+      await ctx.reply("🔒 Geliştirici Modu sadece Barış Bey'in erişimine açıktır.");
+      return;
+    }
+
+    const query = ctx.message?.text?.split(" ").slice(1).join(" ");
+    if (!query) {
+      await ctx.reply(
+        "🛠️ *Ayça Geliştirici Modu*\n\nLütfen bir geliştirme talebi girin.\n\nÖrn: `/dev Yeni bir personel rolü eklemek için hangi dosyaları değiştirmeliyim?`",
+        { parse_mode: "Markdown" },
+      );
+      return;
+    }
+
+    await ctx.reply("🔍 *SanaSistans Mimarisi Analiz Ediliyor...*", { parse_mode: "Markdown" });
+    
+    // Developer logic will be handled here via LLM
+    // For now, we will use a specialized prompt in LLM Service
+    const { OpenRouterService } = require("../utils/llm.service");
+    const llm = new OpenRouterService();
+    
+    const technicalPrompt = `Sen bir Yazılım Mimarısısın. SanaSistans (Sanal Asistan) projesinin kod yapısına hakimsin. 
+    Proje Yapısı:
+    - src/index.ts: Bot giriş noktası
+    - src/handlers: Mesaj ve komut işleyiciler
+    - src/utils: Servisler (Supabase, Order, Production, Staff vb.)
+    - docs/: Soul ve diğer dokümanlar
+    - data/: JSON veritabanı (staff.json vb.)
+    
+    Kullanıcının (Barış Bey) teknik sorusunu veya geliştirme talebini yanıtla. Kod örnekleri ver.`;
+    
+    const response = await llm.chat(query, technicalPrompt);
+    await ctx.reply(response || "Üzgünüm, teknik analiz sırasında bir hata oluştu.", { parse_mode: "Markdown" });
   }
 }

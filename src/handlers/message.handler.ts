@@ -164,11 +164,11 @@ export class MessageHandler {
 
     const response = await this.llmService.chat(text, context);
 
-    // Response'un Cenk Bey'e mi yoksa personele mi gittiğini ayarla
+    // Response'un Barış Bey'e bildirildi. yoksa personele mi gittiğini ayarla
     await ctx.reply(
       response ||
         (isBoss
-          ? "Üzgünüm Cenk Bey, bir hata oluştu."
+          ? "Üzgünüm Barış Bey, bir hata oluştu."
           : "Üzgünüm, bir hata oluştu."),
     );
   }
