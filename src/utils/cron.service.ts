@@ -69,33 +69,33 @@ export class CronService {
     // Sabah Brifingi (Haftaiçi 08:30)
     cron.schedule("30 8 * * 1-5", () => {
       this.sendMorningBriefing();
-    });
+    }, { timezone: "Asia/Almaty" });
 
     // Akşam Brifingi (Haftaiçi 18:00)
     cron.schedule("0 18 * * 1-5", () => {
       this.sendEveningBriefing();
-    });
+    }, { timezone: "Asia/Almaty" });
 
     // Cenk Bey: Malzeme Takibi Hatırlatması (Her gün 10:00)
     cron.schedule("0 10 * * *", () => {
       this.checkPendingMaterials();
-    });
+    }, { timezone: "Asia/Almaty" });
 
     // --- PERSONEL KONTROL MESAJLARI ---
     cron.schedule("0 9 * * 1-5", () => {
       this.sendStaffControlMessage("morning");
-    });
+    }, { timezone: "Asia/Almaty" });
     cron.schedule("30 13 * * 1-5", () => {
       this.sendStaffControlMessage("noon");
-    });
+    }, { timezone: "Asia/Almaty" });
     cron.schedule("30 17 * * 1-5", () => {
       this.sendStaffControlMessage("evening");
-    });
+    }, { timezone: "Asia/Almaty" });
 
     // KUMAŞ TAKİP: 24 Saati geçen kumaş onaylarını kontrol et (Her 4 saatte bir)
     cron.schedule("0 */4 * * *", () => {
       this.checkFabricStatus();
-    });
+    }, { timezone: "Asia/Almaty" });
   }
 
   // --- DINAMIK GÖREV YÖNETIMİ ---
@@ -166,7 +166,7 @@ export class CronService {
         this.activeDynamicJobs.delete(task.id);
         this.removeTask(task.id);
       }
-    });
+    }, { timezone: "Asia/Almaty" });
 
     this.activeDynamicJobs.set(task.id, job);
   }

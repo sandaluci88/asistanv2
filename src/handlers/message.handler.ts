@@ -196,7 +196,9 @@ export class MessageHandler {
       const response = await this.llmService.chat(prompt, "Email Parse Mode");
       if (!response) throw new Error("LLM Error");
 
-      const jsonStr = response.replace(/```json|```/g, "").trim();
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("JSON not found in response");
+      const jsonStr = jsonMatch[0].trim();
       const parsed = JSON.parse(jsonStr);
 
       if (!parsed.to) {
@@ -225,14 +227,14 @@ export class MessageHandler {
 
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { 
-      timeZone: "Europe/Istanbul", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" 
+      timeZone: "Asia/Almaty", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" 
     };
     const currentTime = now.toLocaleString("tr-TR", options);
 
     const prompt = `
       Kullanıcı senden bir hatırlatma ayarlamanı istiyor. Aşağıdaki metinden hatırlatılacak mesajı ve zamanını (cron formatında) çıkar.
       Zaman çıkarımı yaparken şunlara dikkat et:
-      - Türkiye saati (UTC+3) kullanıyoruz. Şu anki zaman: ${currentTime}
+      - Kazakistan/Almatı saati (UTC+5) kullanıyoruz. Şu anki zaman: ${currentTime}
       - Cron formatı sırasıyla şunlardır: Dakika(0-59) Saat(0-23) Gün(1-31) Ay(1-12) HaftanınGünü(0-7)
       - Örnek: "10 dakika sonra" -> şu anki dakikaya 10 ekle ve mod 60 al. Saati gerekirse artır.
       - Örnek: "Yarın sabah 9'da" -> "0 9 <yarınki_gun> <yarınki_ay> *"
@@ -251,7 +253,9 @@ export class MessageHandler {
       const response = await this.llmService.chat(prompt, "Reminder Parse Mode");
       if (!response) throw new Error("LLM Error");
 
-      const jsonStr = response.replace(/```json|```/g, "").trim();
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("JSON not found in response");
+      const jsonStr = jsonMatch[0].trim();
       const parsed = JSON.parse(jsonStr);
 
       if (!parsed.message || !parsed.cron) {
