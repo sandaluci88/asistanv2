@@ -33,13 +33,19 @@ export class MessageHandler {
     } else if (ctx.message.voice) {
       await ctx.reply("🎙️ Sesli mesajınızı dinliyorum, lütfen bekleyin...");
       const voiceLang = (ctx as any).role === "boss" ? "tr" : "ru";
-      const transcribedText = await this.voiceService.transcribeVoiceMessage(ctx, ctx.message.voice.file_id, voiceLang);
-      
+      const transcribedText = await this.voiceService.transcribeVoiceMessage(
+        ctx,
+        ctx.message.voice.file_id,
+        voiceLang,
+      );
+
       if (!transcribedText) {
-        await ctx.reply("❌ Sesli mesajınızı çözümleyemedim veya OpenAI API anahtarı ayarlanmamış.");
+        await ctx.reply(
+          "❌ Sesli mesajınızı çözümleyemedim veya OpenAI API anahtarı ayarlanmamış.",
+        );
         return;
       }
-      
+
       await ctx.reply(`_"${transcribedText}"_`, { parse_mode: "Markdown" });
       originalText = transcribedText;
     } else {
@@ -128,7 +134,12 @@ export class MessageHandler {
     isBoss: boolean,
   ) {
     // E-posta Gönderme Tespiti
-    const emailKeywords = ["mail at", "mail gönder", "e-posta at", "e-posta gönder"];
+    const emailKeywords = [
+      "mail at",
+      "mail gönder",
+      "e-posta at",
+      "e-posta gönder",
+    ];
     const isEmailRequest = emailKeywords.some((kw) => text.includes(kw));
 
     if (isEmailRequest) {
@@ -137,7 +148,13 @@ export class MessageHandler {
     }
 
     // Hatırlatıcı / Zamanlı Görev Tespiti
-    const reminderKeywords = ["hatırlat", "zamanında", "alarm kur", "haber ver", "sonra bildir"];
+    const reminderKeywords = [
+      "hatırlat",
+      "zamanında",
+      "alarm kur",
+      "haber ver",
+      "sonra bildir",
+    ];
     const isReminderRequest = reminderKeywords.some((kw) => text.includes(kw));
 
     if (isReminderRequest) {
@@ -146,8 +163,18 @@ export class MessageHandler {
     }
 
     // Sipariş Durum Sorgulama Tespiti
-    const statusKeywords = ["durum", "ne durumda", "hangi aşamada", "rapor", "bilgi ver"];
-    const isStatusQuery = (text.includes("sipariş") || text.includes("muşteri") || text.includes("müşteri")) && statusKeywords.some((kw) => text.includes(kw));
+    const statusKeywords = [
+      "durum",
+      "ne durumda",
+      "hangi aşamada",
+      "rapor",
+      "bilgi ver",
+    ];
+    const isStatusQuery =
+      (text.includes("sipariş") ||
+        text.includes("muşteri") ||
+        text.includes("müşteri")) &&
+      statusKeywords.some((kw) => text.includes(kw));
 
     if (isStatusQuery && isBoss) {
       await this.handleOrderStatusQuery(ctx, text, isBoss);
@@ -174,7 +201,11 @@ export class MessageHandler {
     );
   }
 
-  private async handleEmailRequest(ctx: Context, text: string, isBoss: boolean) {
+  private async handleEmailRequest(
+    ctx: Context,
+    text: string,
+    isBoss: boolean,
+  ) {
     await ctx.reply("📧 E-posta gönderim talebinizi inceliyorum...");
 
     // LLM'den e-posta detaylarını JSON olarak çekelim
@@ -203,32 +234,51 @@ export class MessageHandler {
       const parsed = JSON.parse(jsonStr);
 
       if (!parsed.to) {
-        await ctx.reply("❌ Kime e-posta atacağımı mesajınızda bulamadım. Lütfen e-posta adresini belirterek tekrar yazar mısınız?");
+        await ctx.reply(
+          "❌ Kime e-posta atacağımı mesajınızda bulamadım. Lütfen e-posta adresini belirterek tekrar yazar mısınız?",
+        );
         return;
       }
 
       const { GmailService } = await import("../utils/gmail.service");
       const gmailService = GmailService.getInstance();
-      
-      const success = await gmailService.sendEmail(parsed.to, parsed.subject || "Sandaluci Bilgilendirme", parsed.body || "");
+
+      const success = await gmailService.sendEmail(
+        parsed.to,
+        parsed.subject || "Sandaluci Bilgilendirme",
+        parsed.body || "",
+      );
 
       if (success) {
-        await ctx.reply(`✅ E-posta başarıyla gönderildi!\n\n**Alıcı:** ${parsed.to}\n**Konu:** ${parsed.subject}`);
+        await ctx.reply(
+          `✅ E-posta başarıyla gönderildi!\n\n**Alıcı:** ${parsed.to}\n**Konu:** ${parsed.subject}`,
+        );
       } else {
         await ctx.reply("❌ E-posta gönderilirken teknik bir hata oluştu.");
       }
     } catch (e) {
       console.error("Email parsing error:", e);
-      await ctx.reply("❌ E-posta bilgilerinizi tam anlayamadım, lütfen daha açık yazar mısınız?");
+      await ctx.reply(
+        "❌ E-posta bilgilerinizi tam anlayamadım, lütfen daha açık yazar mısınız?",
+      );
     }
   }
 
-  private async handleReminderRequest(ctx: Context, text: string, isBoss: boolean) {
+  private async handleReminderRequest(
+    ctx: Context,
+    text: string,
+    isBoss: boolean,
+  ) {
     await ctx.reply("⏰ Hatırlatma talebinizi ayarlıyorum...");
 
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      timeZone: "Asia/Almaty", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" 
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: "Asia/Almaty",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
     };
     const currentTime = now.toLocaleString("tr-TR", options);
 
@@ -251,7 +301,10 @@ export class MessageHandler {
     `;
 
     try {
-      const response = await this.llmService.chat(prompt, "Reminder Parse Mode");
+      const response = await this.llmService.chat(
+        prompt,
+        "Reminder Parse Mode",
+      );
       if (!response) throw new Error("LLM Error");
 
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -265,29 +318,40 @@ export class MessageHandler {
 
       const { CronService } = await import("../utils/cron.service");
       const cronService = CronService.getInstance();
-      
+
       const task = cronService.addDynamicTask(
         ctx.chat?.id || "",
         parsed.message,
         parsed.cron,
-        false
+        false,
       );
 
-      await ctx.reply(`✅ Hatırlatma kuruldu!\n\n**Mesaj:** ${task.message}\n**Zaman (Cron):** ${task.triggerTimeStr}`);
-      
+      await ctx.reply(
+        `✅ Hatırlatma kuruldu!\n\n**Mesaj:** ${task.message}\n**Zaman (Cron):** ${task.triggerTimeStr}`,
+      );
     } catch (e) {
       console.error("Reminder parsing error:", e);
-      await ctx.reply("❌ Hatırlatma zamanını veya detayını tam anlayamadım, lütfen daha açık yazar mısınız (Örn: '5 dakika sonra Cenk Beye mesaj at' veya 'Yarın sabah 10 da toplantı var de').");
+      await ctx.reply(
+        "❌ Hatırlatma zamanını veya detayını tam anlayamadım, lütfen daha açık yazar mısınız (Örn: '5 dakika sonra Cenk Beye mesaj at' veya 'Yarın sabah 10 da toplantı var de').",
+      );
     }
   }
 
-  private async handleOrderStatusQuery(ctx: Context, text: string, isBoss: boolean) {
+  private async handleOrderStatusQuery(
+    ctx: Context,
+    text: string,
+    isBoss: boolean,
+  ) {
     if (!isBoss) {
-      await ctx.reply("❌ Sipariş raporlarını sorgulama yetkisi sadece yöneticilere aittir.");
+      await ctx.reply(
+        "❌ Sipariş raporlarını sorgulama yetkisi sadece yöneticilere aittir.",
+      );
       return;
     }
 
-    await ctx.reply("📊 Sipariş durumunu veritabanından kontrol edip raporluyorum, lütfen bekleyin...");
+    await ctx.reply(
+      "📊 Sipariş durumunu veritabanından kontrol edip raporluyorum, lütfen bekleyin...",
+    );
 
     // Siparişleri çek
     const orders = this.orderService.getOrders();
@@ -306,8 +370,12 @@ export class MessageHandler {
         Miktar: i.quantity,
         Departman: i.department,
         Isi_Yapan: i.assignedWorker || "Atanmadı",
-        Kumas_Geldimi: i.fabricDetails ? (i.fabricDetails.arrived ? "Geldi" : "Bekleniyor") : "N/A"
-      }))
+        Kumas_Geldimi: i.fabricDetails
+          ? i.fabricDetails.arrived
+            ? "Geldi"
+            : "Bekleniyor"
+          : "N/A",
+      })),
     }));
 
     const prompt = `

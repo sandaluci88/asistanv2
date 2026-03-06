@@ -40,8 +40,8 @@ export class GmailService {
       },
       logger: false,
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     this.transporter = nodemailer.createTransport({
@@ -63,7 +63,12 @@ export class GmailService {
   /**
    * E-posta gönderir.
    */
-  async sendEmail(to: string, subject: string, text: string, html?: string): Promise<boolean> {
+  async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html?: string,
+  ): Promise<boolean> {
     try {
       await this.transporter.sendMail({
         from: process.env.GMAIL_USER,
@@ -97,8 +102,8 @@ export class GmailService {
       },
       logger: false,
       tls: {
-        rejectUnauthorized: false
-      }
+        rejectUnauthorized: false,
+      },
     });
 
     try {
@@ -140,14 +145,20 @@ export class GmailService {
                 // İşlemi yap
                 await processor(msg);
               } catch (procError) {
-                logger.error({ err: procError }, `Error while processing email ${uid}`);
+                logger.error(
+                  { err: procError },
+                  `Error while processing email ${uid}`,
+                );
               } finally {
                 // Başarıyla işlense de hata alsa da okundu olarak işaretle (sonsuz döngüyü önler)
                 try {
                   await client.messageFlagsAdd(uid.toString(), ["\\Seen"]);
                   logger.info(`Message ${uid} marked as read.`);
                 } catch (flagError) {
-                  logger.error({ err: flagError }, `Failed to mark message ${uid} as read`);
+                  logger.error(
+                    { err: flagError },
+                    `Failed to mark message ${uid} as read`,
+                  );
                 }
               }
             }

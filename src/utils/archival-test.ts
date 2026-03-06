@@ -7,12 +7,12 @@ const logger = pino({ name: "ArchivalTest" });
 
 async function runTest() {
   const orderService = new OrderService();
-  
+
   // 1. Prepare dummy data
-  const dateStr = new Array(1).fill(new Date().toISOString().split('T')[0])[0];
+  const dateStr = new Array(1).fill(new Date().toISOString().split("T")[0])[0];
   const testDir = path.join(process.cwd(), "data", "orders", dateStr);
   const dummyFilePath = path.join(process.cwd(), "test-order.xlsx");
-  
+
   if (!fs.existsSync(dummyFilePath)) {
     fs.writeFileSync(dummyFilePath, "dummy excel content");
     logger.info("Created dummy test-order.xlsx");
@@ -25,18 +25,18 @@ async function runTest() {
     // In order.service.ts, it is used during processEmailAttachments
     const dummyAtachment = {
       filename: "test-order.xlsx",
-      content: fs.readFileSync(dummyFilePath)
+      content: fs.readFileSync(dummyFilePath),
     };
-    
+
     // Simulating the logic inside archiveOrderFile
     const targetPath = path.join(testDir, dummyAtachment.filename);
-    
+
     if (!fs.existsSync(testDir)) {
       fs.mkdirSync(testDir, { recursive: true });
     }
-    
+
     fs.writeFileSync(targetPath, dummyAtachment.content);
-    
+
     if (fs.existsSync(targetPath)) {
       logger.info(`✅ Archival successful: ${targetPath}`);
     } else {
@@ -50,6 +50,6 @@ async function runTest() {
   }
 }
 
-runTest().catch(err => {
+runTest().catch((err) => {
   logger.error({ err }, "Test script error");
 });

@@ -1,4 +1,3 @@
-
 import { OrderDetail } from "./order.service";
 
 export interface DraftOrder {
@@ -24,10 +23,13 @@ export class DraftOrderService {
     return DraftOrderService.instance;
   }
 
-  saveDraft(id: string, data: { order: any; images: any[]; excelRows?: any[] }) {
+  saveDraft(
+    id: string,
+    data: { order: any; images: any[]; excelRows?: any[] },
+  ) {
     this.pendingOrders.set(id, {
       ...data,
-      assignments: {}
+      assignments: {},
     });
     // 30 dakika sonra temizle
     setTimeout(() => this.pendingOrders.delete(id), 30 * 60 * 1000);

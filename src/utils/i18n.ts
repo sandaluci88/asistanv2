@@ -1,6 +1,6 @@
 /**
  * i18n - İkidilli Çeviri Modülü (Türkçe / Rusça)
- * 
+ *
  * Kural:
  * - Tüm personel (çalışanlar) → Rusça (ru)
  * - Barış Bey (patron) → Türkçe (tr)
@@ -11,167 +11,167 @@ export type Language = "tr" | "ru";
 
 const translations: Record<string, Record<Language, string>> = {
   // === Genel ===
-  "welcome_boss": {
+  welcome_boss: {
     tr: "Hoş geldiniz Barış Bey! 👋\n\nSandaluci üretim süreçleri ve ekip yönetimi için hazırım.\n\nKullanabileceğiniz Yönetici Komutları:\n/ajanda - Günlük planınız\n/personel - Ekip listesi\n/durum - Üretim durumu\n/kayit - Yeni personel ekle\n/sil - Personel sil\n/takip - İş takip paneli\n/dev - Geliştirici Modu",
-    ru: "Добро пожаловать, Барыш Бей! 👋\n\nЯ готова помочь с управлением производства Sandaluci.\n\nДоступные команды:\n/ajanda - Расписание\n/personel - Список персонала\n/durum - Статус производства\n/kayit - Добавить персонал\n/sil - Удалить персонал\n/takip - Панель отслеживания\n/dev - Режим разработчика"
+    ru: "Добро пожаловать, Барыш Бей! 👋\n\nЯ готова помочь с управлением производства Sandaluci.\n\nДоступные команды:\n/ajanda - Расписание\n/personel - Список персонала\n/durum - Статус производства\n/kayit - Добавить персонал\n/sil - Удалить персонал\n/takip - Панель отслеживания\n/dev - Режим разработчика",
   },
-  "welcome_staff": {
+  welcome_staff: {
     tr: "Merhaba {name}! Ben Ayça. 👋\n\n*{department}* bölümündeki süreçlerde sana destek olmak için buradayım.\n\nKullanabileceğin komutlar:\n/durum - Üretim durumu\n/start - Yardım menüsü",
-    ru: "Здравствуйте, {name}! Я Айча. 👋\n\nЯ здесь, чтобы помочь вам в отделе *{department}*.\n\nДоступные команды:\n/durum - Статус производства\n/start - Меню помощи"
+    ru: "Здравствуйте, {name}! Я Айча. 👋\n\nЯ здесь, чтобы помочь вам в отделе *{department}*.\n\nДоступные команды:\n/durum - Статус производства\n/start - Меню помощи",
   },
-  "welcome_guest": {
+  welcome_guest: {
     tr: "Merhaba! Ben Ayça, Sandaluci Yönetici Asistanıyım. 🙋‍♀️\n\nŞu an sadece kayıtlı personele hizmet verebiliyorum. Lütfen Cenk Bey ile iletişime geçerek kaydınızı yaptırın.",
-    ru: "Здравствуйте! Я Айча, ассистент управления Sandaluci. 🙋‍♀️\n\nВ данный момент я обслуживаю только зарегистрированный персонал. Пожалуйста, свяжитесь с руководством для регистрации."
+    ru: "Здравствуйте! Я Айча, ассистент управления Sandaluci. 🙋‍♀️\n\nВ данный момент я обслуживаю только зарегистрированный персонал. Пожалуйста, свяжитесь с руководством для регистрации.",
   },
-  "access_denied": {
+  access_denied: {
     tr: "🔒 Bu komuta erişim yetkiniz bulunmamaktadır.",
-    ru: "🔒 У вас нет доступа к этой команде."
+    ru: "🔒 У вас нет доступа к этой команде.",
   },
 
   // === Takip Paneli ===
-  "tracking_title": {
+  tracking_title: {
     tr: "📋 *Aktif İş Takip Paneli*",
-    ru: "📋 *Панель отслеживания работ*"
+    ru: "📋 *Панель отслеживания работ*",
   },
-  "tracking_empty": {
+  tracking_empty: {
     tr: "✨ Şu an aktif takip gerektiren bir iş bulunmuyor.",
-    ru: "✨ В данный момент нет активных работ для отслеживания."
+    ru: "✨ В данный момент нет активных работ для отслеживания.",
   },
-  "tracking_boss_only": {
+  tracking_boss_only: {
     tr: "🔒 Takip paneline sadece yöneticiler erişebilir.",
-    ru: "🔒 Панель отслеживания доступна только руководству."
+    ru: "🔒 Панель отслеживания доступна только руководству.",
   },
-  "tracking_actions_hint": {
+  tracking_actions_hint: {
     tr: "\nDetaylı işlem yapmak için yukarıdaki butonları kullanabilirsiniz:",
-    ru: "\nИспользуйте кнопки выше для управления:"
+    ru: "\nИспользуйте кнопки выше для управления:",
   },
-  "tracking_refreshed": {
+  tracking_refreshed: {
     tr: "Liste güncellendi.",
-    ru: "Список обновлён."
+    ru: "Список обновлён.",
   },
 
   // === Statüler ===
-  "status_bekliyor": {
+  status_bekliyor: {
     tr: "Bekliyor",
-    ru: "Ожидание"
+    ru: "Ожидание",
   },
-  "status_uretimde": {
+  status_uretimde: {
     tr: "Üretimde",
-    ru: "В производстве"
+    ru: "В производстве",
   },
-  "status_boyada": {
+  status_boyada: {
     tr: "Boyada",
-    ru: "На покраске"
+    ru: "На покраске",
   },
-  "status_dikiste": {
+  status_dikiste: {
     tr: "Dikiş'te",
-    ru: "На шитье"
+    ru: "На шитье",
   },
-  "status_dosemede": {
+  status_dosemede: {
     tr: "Döşeme'de",
-    ru: "На обивке"
+    ru: "На обивке",
   },
-  "status_hazir": {
+  status_hazir: {
     tr: "Hazır",
-    ru: "Готово"
+    ru: "Готово",
   },
-  "status_sevk_edildi": {
+  status_sevk_edildi: {
     tr: "Sevk Edildi",
-    ru: "Отправлено"
+    ru: "Отправлено",
   },
-  "status_arsivlendi": {
+  status_arsivlendi: {
     tr: "Arşivlendi",
-    ru: "В архиве"
+    ru: "В архиве",
   },
 
   // === Butonlar ===
-  "btn_start_production": {
+  btn_start_production: {
     tr: "⚙️ Üretime Başlat",
-    ru: "⚙️ Начать производство"
+    ru: "⚙️ Начать производство",
   },
-  "btn_send_to_paint": {
+  btn_send_to_paint: {
     tr: "🎨 Boya'ya Gönder",
-    ru: "🎨 На покраску"
+    ru: "🎨 На покраску",
   },
-  "btn_send_to_sewing": {
+  btn_send_to_sewing: {
     tr: "🧵 Dikiş'e Gönder",
-    ru: "🧵 На шитьё"
+    ru: "🧵 На шитьё",
   },
-  "btn_send_to_upholstery": {
+  btn_send_to_upholstery: {
     tr: "🪑 Döşeme'ye Gönder",
-    ru: "🪑 На обивку"
+    ru: "🪑 На обивку",
   },
-  "btn_ready": {
+  btn_ready: {
     tr: "✅ Hazır",
-    ru: "✅ Готово"
+    ru: "✅ Готово",
   },
-  "btn_refresh": {
+  btn_refresh: {
     tr: "🔄 Listeyi Yenile",
-    ru: "🔄 Обновить список"
+    ru: "🔄 Обновить список",
   },
-  "btn_archive": {
+  btn_archive: {
     tr: "🏁 Bitenleri Arşivle",
-    ru: "🏁 Архивировать"
+    ru: "🏁 Архивировать",
   },
 
   // === Bildirimler (Personel) ===
-  "notification_new_order": {
+  notification_new_order: {
     tr: "📦 *YENİ İŞ EMRİ*\n\nMüşteri: {customer}\nÜrün: {product}\nAdet: {quantity}\nBirim: {department}",
-    ru: "📦 *НОВЫЙ ЗАКАЗ*\n\nКлиент: {customer}\nИзделие: {product}\nКоличество: {quantity}\nОтдел: {department}"
+    ru: "📦 *НОВЫЙ ЗАКАЗ*\n\nКлиент: {customer}\nИзделие: {product}\nКоличество: {quantity}\nОтдел: {department}",
   },
-  "notification_status_updated": {
+  notification_status_updated: {
     tr: "Durum {status} olarak güncellendi.",
-    ru: "Статус обновлён: {status}."
+    ru: "Статус обновлён: {status}.",
   },
 
   // === Sipariş Dağıtım Raporu ===
-  "distribution_complete": {
+  distribution_complete: {
     tr: "🔔 Sipariş dağıtım işlemleri tamamlandı.",
-    ru: "🔔 Распределение заказов завершено."
+    ru: "🔔 Распределение заказов завершено.",
   },
-  "auto_depts_distributed": {
+  auto_depts_distributed: {
     tr: "✅ *Karkas ve Diğer Otomatik Birimler Dağıtıldı.*",
-    ru: "✅ *Каркас и другие автоматические отделы распределены.*"
+    ru: "✅ *Каркас и другие автоматические отделы распределены.*",
   },
 
   // === Kayıt / Silme ===
-  "staff_registered": {
+  staff_registered: {
     tr: "✅ Personel başarıyla kaydedildi.",
-    ru: "✅ Сотрудник успешно зарегистрирован."
+    ru: "✅ Сотрудник успешно зарегистрирован.",
   },
-  "staff_removed": {
+  staff_removed: {
     tr: "✅ Personel başarıyla silindi.",
-    ru: "✅ Сотрудник успешно удалён."
+    ru: "✅ Сотрудник успешно удалён.",
   },
 
   // === Otomatik Takip (Follow-Up) ===
-  "followup_question": {
+  followup_question: {
     tr: "📋 *Durum Sorgusu*\n\nMüşteri: *{customer}*\nÜrün: {product}\nAdet: {quantity}\n\nBu sipariş bitti mi?",
-    ru: "📋 *Проверка статуса*\n\nКлиент: *{customer}*\nИзделие: {product}\nКоличество: {quantity}\n\nЭтот заказ готов?"
+    ru: "📋 *Проверка статуса*\n\nКлиент: *{customer}*\nИзделие: {product}\nКоличество: {quantity}\n\nЭтот заказ готов?",
   },
-  "btn_yes_done": {
+  btn_yes_done: {
     tr: "✅ Evet, bitti",
-    ru: "✅ Да, готово"
+    ru: "✅ Да, готово",
   },
-  "btn_no_ongoing": {
+  btn_no_ongoing: {
     tr: "⏳ Hayır, devam ediyor",
-    ru: "⏳ Нет, в процессе"
+    ru: "⏳ Нет, в процессе",
   },
-  "followup_noted_done": {
+  followup_noted_done: {
     tr: "✅ Teşekkürler! Sipariş tamamlandı olarak işaretlendi.",
-    ru: "✅ Спасибо! Заказ отмечен как выполненный."
+    ru: "✅ Спасибо! Заказ отмечен как выполненный.",
   },
-  "followup_noted_ongoing": {
+  followup_noted_ongoing: {
     tr: "⏳ Tamam, 3 gün sonra tekrar soracağım.",
-    ru: "⏳ Хорошо, спрошу снова через 3 дня."
+    ru: "⏳ Хорошо, спрошу снова через 3 дня.",
   },
-  "followup_paint_sent": {
+  followup_paint_sent: {
     tr: "🎨 Boya bölümüne iş emri otomatik gönderildi.",
-    ru: "🎨 Заказ автоматически отправлен в покрасочный отдел."
+    ru: "🎨 Заказ автоматически отправлен в покрасочный отдел.",
   },
-  "followup_summary_marina": {
+  followup_summary_marina: {
     tr: "📊 *Takip Özeti*\n\n{summary}",
-    ru: "📊 *Сводка отслеживания*\n\n{summary}"
+    ru: "📊 *Сводка отслеживания*\n\n{summary}",
   },
 };
 
@@ -181,7 +181,11 @@ const translations: Record<string, Record<Language, string>> = {
  * @param lang - Dil kodu ("tr" | "ru")
  * @param params - Opsiyonel parametreler ({name}, {department} vb.)
  */
-export function t(key: string, lang: Language = "ru", params?: Record<string, string>): string {
+export function t(
+  key: string,
+  lang: Language = "ru",
+  params?: Record<string, string>,
+): string {
   const entry = translations[key];
   if (!entry) {
     console.warn(`⚠️ i18n: Missing translation key "${key}"`);

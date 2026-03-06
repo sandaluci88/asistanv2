@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 const PDFDocument = require("pdfkit");
-const { createCanvas, Image } = require('canvas');
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+const { createCanvas, Image } = require("canvas");
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 import { OpenRouterService } from "./llm.service";
 import { StaffService } from "./staff.service";
 import { XlsxUtils, ExcelRow } from "./xlsx-utils";
@@ -28,7 +28,15 @@ export interface OrderItem {
   rowIndex?: number;
   imageBuffer?: Buffer;
   imageExtension?: string;
-  status: "bekliyor" | "uretimde" | "boyada" | "dikiste" | "dosemede" | "hazir" | "sevk_edildi" | "arsivlendi";
+  status:
+    | "bekliyor"
+    | "uretimde"
+    | "boyada"
+    | "dikiste"
+    | "dosemede"
+    | "hazir"
+    | "sevk_edildi"
+    | "arsivlendi";
   assignedWorker?: string;
   distributedAt?: string; // İş emri dağıtım tarihi (takip zamanlayıcı için)
   fabricDetails?: {
@@ -110,13 +118,13 @@ export class OrderService {
               name: i.fabric_name,
               amount: i.fabric_amount,
               arrived: i.fabric_arrived,
-              issueNote: i.fabric_issue_note
+              issueNote: i.fabric_issue_note,
             },
             lastReminderAt: i.last_reminder_at,
             rowIndex: i.row_index,
             createdAt: i.created_at,
-            updatedAt: i.updated_at
-          }))
+            updatedAt: i.updated_at,
+          })),
         }));
         this.saveToLocalFile(); // Yedekle
       }
@@ -165,7 +173,7 @@ export class OrderService {
     content: string,
     subject: string,
     isExcel: boolean = false,
-    rawExcelData?: ExcelRow[]
+    rawExcelData?: ExcelRow[],
   ): Promise<OrderDetail | null> {
     const prompt = `
       Sen profesyonel bir Sandaluci Üretim Planlama Asistanısın. Görevin, gelen Excel verisini departmanlara göre hatasız parçalamaktır.
@@ -224,9 +232,11 @@ export class OrderService {
 
     try {
       if (isExcel) {
-        console.log(`📊 Excel verisi LLM'e gönderiliyor (${content.length} karakter)`);
+        console.log(
+          `📊 Excel verisi LLM'e gönderiliyor (${content.length} karakter)`,
+        );
       }
-      
+
       const response = await this.llmService.chat(
         prompt,
         "Sipariş ve Koordinasyon Analiz Modu.",
@@ -242,8 +252,21 @@ export class OrderService {
 
       const jsonStr = jsonMatch[0].trim();
       const parsed = JSON.parse(jsonStr);
-      console.log(`🧠 [DEBUG] LLM Ayrıştırma Başarılı. Ürün Sayısı: ${parsed.items?.length || 0}`);
-      console.log(`📋 [DEBUG] Ayrıştırılan Ürünler:`, JSON.stringify(parsed.items?.map((i: any) => ({ p: i.product, d: i.department, r: i.rowIndex })), null, 2));
+      console.log(
+        `🧠 [DEBUG] LLM Ayrıştırma Başarılı. Ürün Sayısı: ${parsed.items?.length || 0}`,
+      );
+      console.log(
+        `📋 [DEBUG] Ayrıştırılan Ürünler:`,
+        JSON.stringify(
+          parsed.items?.map((i: any) => ({
+            p: i.product,
+            d: i.department,
+            r: i.rowIndex,
+          })),
+          null,
+          2,
+        ),
+      );
 
       const order: OrderDetail = {
         id: Date.now().toString(),
@@ -260,36 +283,58 @@ export class OrderService {
         status: "bekliyor",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fabricDetails: item.fabricDetails ? {
-          ...item.fabricDetails,
-          amount: typeof (item.fabricDetails as any).amount === 'string' ? parseFloat((item.fabricDetails as any).amount.replace(/[^0-9.]/g, '')) : ((item.fabricDetails as any).amount || 0),
-          arrived: false
-        } : undefined
+        fabricDetails: item.fabricDetails
+          ? {
+              ...item.fabricDetails,
+              amount:
+                typeof (item.fabricDetails as any).amount === "string"
+                  ? parseFloat(
+                      (item.fabricDetails as any).amount.replace(
+                        /[^0-9.]/g,
+                        "",
+                      ),
+                    )
+                  : (item.fabricDetails as any).amount || 0,
+              arrived: false,
+            }
+          : undefined,
       }));
 
       // Görselleri işle (Eğer Excel verisi varsa)
       if (isExcel && rawExcelData) {
-        const floatingImages = (rawExcelData as any).floatingImages as Buffer[] | undefined;
+        const floatingImages = (rawExcelData as any).floatingImages as
+          | Buffer[]
+          | undefined;
         let floatingIndex = 0;
 
-        order.items.forEach(item => {
+        order.items.forEach((item) => {
           let hasAssignedImage = false;
 
           if (item.rowIndex) {
-            const excelMatch = rawExcelData.find(r => r._rowNumber === item.rowIndex);
+            const excelMatch = rawExcelData.find(
+              (r) => r._rowNumber === item.rowIndex,
+            );
             if (excelMatch && excelMatch._imageBuffer) {
               item.imageBuffer = excelMatch._imageBuffer;
               item.imageExtension = excelMatch._imageExtension || "png";
               hasAssignedImage = true;
-              console.log(`✅ [DEBUG] Resim Eşleşti: Ürün=${item.product}, Satır=${item.rowIndex}`);
+              console.log(
+                `✅ [DEBUG] Resim Eşleşti: Ürün=${item.product}, Satır=${item.rowIndex}`,
+              );
             }
           }
 
           // Satırdan resim eşleşmediyse veya satır bilgisi yoksa, floating (serbest) resimlerden birini ata
-          if (!hasAssignedImage && floatingImages && floatingIndex < floatingImages.length) {
+          if (
+            !hasAssignedImage &&
+            floatingImages &&
+            floatingIndex < floatingImages.length
+          ) {
             item.imageBuffer = floatingImages[floatingIndex++];
             item.imageExtension = "png";
-            console.log(`✅ [DEBUG] Serbest Resim (Fallback) Eşleşti: Ürün=${item.product}, Kalan Serbest Resim=${floatingImages.length - floatingIndex}`);
+            console.log(
+              `✅ [DEBUG] Serbest Resim (Fallback) Eşleşti: Ürün=${item.product}, Kalan Serbest Resim=${floatingImages.length - floatingIndex}`,
+            );
           } else if (!hasAssignedImage) {
             console.log(`⚠️ [DEBUG] Resim Bulunamadı: Ürün=${item.product}`);
           }
@@ -300,7 +345,7 @@ export class OrderService {
       }
 
       // Görsel hafıza arka planda çalışsın - sipariş akışını bloklamasın
-      this.saveToVisualMemory(order).catch(e => {
+      this.saveToVisualMemory(order).catch((e) => {
         console.error("⚠️ Görsel hafıza kaydı atlandı (hata):", e);
       });
 
@@ -401,8 +446,10 @@ export class OrderService {
       const product = OrderService.escapeMarkdown(item.product);
       const details = OrderService.escapeMarkdown(item.details || "Yok");
       const dept = OrderService.escapeMarkdown(item.department);
-      const worker = item.assignedWorker ? OrderService.escapeMarkdown(item.assignedWorker) : "⌛ Atama Bekliyor";
-      
+      const worker = item.assignedWorker
+        ? OrderService.escapeMarkdown(item.assignedWorker)
+        : "⌛ Atama Bekliyor";
+
       table += `${index + 1}. 📦 *Ürün:* ${product}\n`;
       table += `   🛠 *Birim:* ${dept}\n`;
       table += `   👤 *Görevli:* ${worker}\n`;
@@ -418,7 +465,11 @@ export class OrderService {
   /**
    * Departman için PDF iş emri oluşturur.
    */
-  async generateJobOrderPDF(items: OrderItem[], customerName: string, dept: string): Promise<Buffer> {
+  async generateJobOrderPDF(
+    items: OrderItem[],
+    customerName: string,
+    dept: string,
+  ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({ margin: 30, size: "A4" });
       const chunks: Buffer[] = [];
@@ -428,36 +479,66 @@ export class OrderService {
       doc.on("error", (err: Error) => reject(err));
 
       // Fontları kaydet (Türkçe karakter desteği için)
-      const fontRegular = path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Regular.ttf");
-      const fontBold = path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Bold.ttf");
-      
+      const fontRegular = path.join(
+        process.cwd(),
+        "src",
+        "assets",
+        "fonts",
+        "Roboto-Regular.ttf",
+      );
+      const fontBold = path.join(
+        process.cwd(),
+        "src",
+        "assets",
+        "fonts",
+        "Roboto-Bold.ttf",
+      );
+
       try {
         if (fs.existsSync(fontRegular) && fs.existsSync(fontBold)) {
-           doc.registerFont("Roboto", fontRegular);
-           doc.registerFont("Roboto-Bold", fontBold);
+          doc.registerFont("Roboto", fontRegular);
+          doc.registerFont("Roboto-Bold", fontBold);
         }
       } catch (err) {
-        console.warn("⚠️ Roboto fontlari yüklenemedi. Standart font kullanılıyor.");
+        console.warn(
+          "⚠️ Roboto fontlari yüklenemedi. Standart font kullanılıyor.",
+        );
       }
-      
+
       // Default fontu ayarla fallback olarak
       const defaultFont = fs.existsSync(fontRegular) ? "Roboto" : "Helvetica";
-      const boldFont = fs.existsSync(fontBold) ? "Roboto-Bold" : "Helvetica-Bold";
+      const boldFont = fs.existsSync(fontBold)
+        ? "Roboto-Bold"
+        : "Helvetica-Bold";
 
       // --- HEADER ---
       doc.rect(30, 30, 535, 60).stroke();
-      doc.font(boldFont).fontSize(22).fillColor("#1a1a1a").text("SANDALUCİ ÜRETİM İŞ EMRİ", 30, 45, { align: "center", width: 535 });
-      doc.font(defaultFont).fontSize(10).fillColor("#555").text(`Departman: ${dept.toUpperCase()}`, 30, 70, { align: "center", width: 535 });
-      
+      doc
+        .font(boldFont)
+        .fontSize(22)
+        .fillColor("#1a1a1a")
+        .text("SANDALUCİ ÜRETİM İŞ EMRİ", 30, 45, {
+          align: "center",
+          width: 535,
+        });
+      doc
+        .font(defaultFont)
+        .fontSize(10)
+        .fillColor("#555")
+        .text(`Departman: ${dept.toUpperCase()}`, 30, 70, {
+          align: "center",
+          width: 535,
+        });
+
       doc.moveDown(3);
       const startY = 100;
       doc.font(boldFont).fontSize(11).fillColor("#000");
       doc.text(`MÜŞTERİ: `, 30, startY, { continued: true });
       doc.font(defaultFont).text(customerName);
-      
+
       doc.font(boldFont).text(`TARİH: `, 400, startY, { continued: true });
       doc.font(defaultFont).text(new Date().toLocaleDateString("tr-TR"));
-      
+
       doc.moveDown();
       doc.moveTo(30, doc.y).lineTo(565, doc.y).stroke();
       doc.moveDown(0.5);
@@ -466,7 +547,7 @@ export class OrderService {
       const tableTop = doc.y;
       const colWidths = [120, 150, 50, 185]; // Resim, Ürün, Adet, Detay
       const colX = [30, 150, 300, 350];
-      
+
       doc.rect(30, tableTop, 535, 20).fill("#f2f2f2").stroke("#ccc");
       doc.fillColor("#000").font(boldFont).fontSize(10);
       doc.text("MODEL", colX[0] + 5, tableTop + 5);
@@ -479,7 +560,7 @@ export class OrderService {
       // --- TABLE ROWS ---
       items.forEach((item, index) => {
         const rowHeight = 110; // Her satır için sabit veya değişken yükseklik
-        
+
         // Sayfa sonu kontrolü
         if (currentY + rowHeight > 750) {
           doc.addPage();
@@ -495,37 +576,71 @@ export class OrderService {
             doc.image(item.imageBuffer, colX[0] + 5, currentY + 5, {
               fit: [110, 100],
               align: "center",
-              valign: "center"
+              valign: "center",
             });
           } catch (e) {
-            doc.font(defaultFont).fontSize(8).text("[Resim Hatası]", colX[0] + 5, currentY + 45);
+            doc
+              .font(defaultFont)
+              .fontSize(8)
+              .text("[Resim Hatası]", colX[0] + 5, currentY + 45);
           }
         } else {
-          doc.font(boldFont).fontSize(8).fillColor("#999").text("GÖRSEL YOK", colX[0] + 30, currentY + 45);
+          doc
+            .font(boldFont)
+            .fontSize(8)
+            .fillColor("#999")
+            .text("GÖRSEL YOK", colX[0] + 30, currentY + 45);
         }
 
         // 2. Ürün Adı
         doc.fillColor("#000").font(boldFont).fontSize(10);
-        doc.text(item.product, colX[1] + 5, currentY + 10, { width: colWidths[1] - 10 });
+        doc.text(item.product, colX[1] + 5, currentY + 10, {
+          width: colWidths[1] - 10,
+        });
 
         // 3. Adet
-        doc.font(defaultFont).fontSize(12).text(item.quantity.toString(), colX[2] + 5, currentY + 10, { width: colWidths[2] - 10, align: "center" });
+        doc
+          .font(defaultFont)
+          .fontSize(12)
+          .text(item.quantity.toString(), colX[2] + 5, currentY + 10, {
+            width: colWidths[2] - 10,
+            align: "center",
+          });
 
         // 4. Detaylar
         doc.font(defaultFont).fontSize(9).fillColor("#333");
-        doc.text(item.details, colX[3] + 5, currentY + 10, { width: colWidths[3] - 10 });
+        doc.text(item.details, colX[3] + 5, currentY + 10, {
+          width: colWidths[3] - 10,
+        });
 
         // Dikey çizgiler
-        doc.moveTo(colX[1], currentY).lineTo(colX[1], currentY + rowHeight).stroke("#ccc");
-        doc.moveTo(colX[2], currentY).lineTo(colX[2], currentY + rowHeight).stroke("#ccc");
-        doc.moveTo(colX[3], currentY).lineTo(colX[3], currentY + rowHeight).stroke("#ccc");
+        doc
+          .moveTo(colX[1], currentY)
+          .lineTo(colX[1], currentY + rowHeight)
+          .stroke("#ccc");
+        doc
+          .moveTo(colX[2], currentY)
+          .lineTo(colX[2], currentY + rowHeight)
+          .stroke("#ccc");
+        doc
+          .moveTo(colX[3], currentY)
+          .lineTo(colX[3], currentY + rowHeight)
+          .stroke("#ccc");
 
         currentY += rowHeight;
       });
 
       // Footer
       const footerY = 780;
-      doc.fontSize(8).fillColor("#999").text("Sandaluci Akıllı Üretim Koordinasyon Sistemi tarafından oluşturulmuştur.", 30, footerY, { align: "center", width: 535 });
+      doc
+        .fontSize(8)
+        .fillColor("#999")
+        .text(
+          "Sandaluci Akıllı Üretim Koordinasyon Sistemi tarafından oluşturulmuştur.",
+          30,
+          footerY,
+          { align: "center", width: 535 },
+        );
 
       doc.end();
     });
@@ -537,7 +652,7 @@ export class OrderService {
   async archiveOrderFile(fileName: string, content: Buffer): Promise<string> {
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const archiveDir = path.join(process.cwd(), "data", "orders", today);
-    
+
     if (!fs.existsSync(archiveDir)) {
       fs.mkdirSync(archiveDir, { recursive: true });
     }
@@ -554,7 +669,7 @@ export class OrderService {
   async archivePDF(deptName: string, pdfBuffer: Buffer): Promise<string> {
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const pdfDir = path.join(process.cwd(), "data", "orders", today, "pdfs");
-    
+
     if (!fs.existsSync(pdfDir)) {
       fs.mkdirSync(pdfDir, { recursive: true });
     }
@@ -562,7 +677,7 @@ export class OrderService {
     const safeDeptName = deptName.replace(/[^a-z0-9]/gi, "_").toUpperCase();
     const fileName = `is_emri_${safeDeptName}_${Date.now()}.pdf`;
     const filePath = path.join(pdfDir, fileName);
-    
+
     fs.writeFileSync(filePath, pdfBuffer);
     console.log(`📂 PDF İş Emri arşivlendi: ${filePath}`);
     return filePath;
@@ -574,11 +689,11 @@ export class OrderService {
   private async logOrder(order: OrderDetail) {
     const timestamp = new Date().toLocaleString("tr-TR");
     let logEntry = `[${timestamp}] YENİ SİPARİŞ: ${order.orderNumber} - Müşteri: ${order.customerName}\n`;
-    
-    order.items.forEach(item => {
+
+    order.items.forEach((item) => {
       logEntry += `  - ${item.product} | ${item.quantity} Adet | Departman: ${item.department} | Kaynak: ${item.source}\n`;
     });
-    
+
     logEntry += `------------------------------------------------------------\n`;
 
     try {
@@ -593,7 +708,7 @@ export class OrderService {
    * Siparişi arşive taşır.
    */
   public async archiveToCompleted(orderId: string): Promise<boolean> {
-    const orderIndex = this.orders.findIndex(o => o.id === orderId);
+    const orderIndex = this.orders.findIndex((o) => o.id === orderId);
     if (orderIndex === -1) return false;
 
     const order = this.orders[orderIndex];
@@ -611,11 +726,11 @@ export class OrderService {
 
       // Mevcut listeden sil
       this.orders.splice(orderIndex, 1);
-      
+
       // DB'de statüyü güncelle (id bazlı)
       await this.supabase.upsertOrder(order);
       this.saveToLocalFile();
-      
+
       console.log(`✅ Sipariş arşive taşındı: ${order.orderNumber}`);
       return true;
     } catch (error) {
@@ -627,10 +742,14 @@ export class OrderService {
   /**
    * Departman için detaylı metin görünümü oluşturur.
    */
-  public generateDeptView(items: OrderItem[], customerName: string, dept: string): string {
+  public generateDeptView(
+    items: OrderItem[],
+    customerName: string,
+    dept: string,
+  ): string {
     const today = new Date().toLocaleDateString("tr-TR");
     const now = new Date().toLocaleTimeString("tr-TR");
-    
+
     let view = `📑 *${dept.toUpperCase()} İŞ EMRİ DETAYI*\n`;
     view += `━━━━━━━━━━━━━━━━━━━━\n`;
     view += `👤 *Müşteri:* ${OrderService.escapeMarkdown(customerName)}\n`;
@@ -646,7 +765,7 @@ export class OrderService {
 
     view += `━━━━━━━━━━━━━━━━━━━━\n`;
     view += `⚠️ _Bu bildirim sistem tarafından otomatik kayıt altına alınmıştır._`;
-    
+
     return view;
   }
 
@@ -658,10 +777,11 @@ export class OrderService {
       if (item.imageBuffer) {
         try {
           console.log(`🧠 Görsel hafıza işleniyor: ${item.product}`);
-          const vector = await this.imageEmbeddingService.generateImageEmbedding(
-            item.imageBuffer,
-            item.imageExtension || "jpg"
-          );
+          const vector =
+            await this.imageEmbeddingService.generateImageEmbedding(
+              item.imageBuffer,
+              item.imageExtension || "jpg",
+            );
 
           await this.qdrantService.upsertImage(
             `${order.id}_${item.product}_${Date.now()}`,
@@ -670,8 +790,8 @@ export class OrderService {
               productName: item.product,
               customerName: order.customerName,
               orderNo: order.orderNumber,
-              tags: [item.department, item.source]
-            }
+              tags: [item.department, item.source],
+            },
           );
         } catch (error) {
           console.error(`❌ Görsel hafıza hatası (${item.product}):`, error);
@@ -686,12 +806,14 @@ export class OrderService {
   async generatePDFView(pdfBuffer: Buffer): Promise<Buffer> {
     try {
       console.log("[OrderService] PDF Görünümü (Screenshot) oluşturuluyor...");
-      
+
       const uint8Array = new Uint8Array(pdfBuffer);
-      
+
       // Font ve Karakter eşleşmeleri için CMap ve StandardFont yollarını belirle
       // Windows'ta backslash'leri forward slash'e çevirmek ve file:/// kullanmak gerekir
-      const nodeModulesPath = path.join(process.cwd(), "node_modules", "pdfjs-dist").replace(/\\/g, '/');
+      const nodeModulesPath = path
+        .join(process.cwd(), "node_modules", "pdfjs-dist")
+        .replace(/\\/g, "/");
       const cMapUrl = `file:///${nodeModulesPath}/cmaps/`;
       const standardFontDataUrl = `file:///${nodeModulesPath}/standard_fonts/`;
 
@@ -702,45 +824,61 @@ export class OrderService {
         cMapUrl: cMapUrl,
         cMapPacked: true,
         standardFontDataUrl: standardFontDataUrl,
-        isEvalSupported: false // Node.js kısıtlamaları için
+        isEvalSupported: false, // Node.js kısıtlamaları için
       });
-      
+
       const pdfDocument = await loadingTask.promise;
-      
+
       // İlk sayfayı al
       const page = await pdfDocument.getPage(1);
-      
+
       // Okunabilirlik için scale (3.0 yüksek kalite sağlar)
       const scale = 3.0;
-      
+
       // Roboto fontlarını Canvas'a kaydet (Manual yedek olarak)
-      const { registerFont } = require('canvas');
-      const regularPath = path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Regular.ttf");
-      const boldPath = path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Bold.ttf");
-      
-      if (fs.existsSync(regularPath)) registerFont(regularPath, { family: 'Roboto' });
-      if (fs.existsSync(boldPath)) registerFont(boldPath, { family: 'Roboto', weight: 'bold' });
+      const { registerFont } = require("canvas");
+      const regularPath = path.join(
+        process.cwd(),
+        "src",
+        "assets",
+        "fonts",
+        "Roboto-Regular.ttf",
+      );
+      const boldPath = path.join(
+        process.cwd(),
+        "src",
+        "assets",
+        "fonts",
+        "Roboto-Bold.ttf",
+      );
+
+      if (fs.existsSync(regularPath))
+        registerFont(regularPath, { family: "Roboto" });
+      if (fs.existsSync(boldPath))
+        registerFont(boldPath, { family: "Roboto", weight: "bold" });
 
       const viewport = page.getViewport({ scale });
-      
+
       // Canvas oluştur
       const canvas = createCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d');
-      
+      const context = canvas.getContext("2d");
+
       // Arkaplanı beyaz yap
-      context.fillStyle = 'white';
+      context.fillStyle = "white";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       // Render ayarları
       const renderContext = {
         canvasContext: context,
-        viewport: viewport
+        viewport: viewport,
       };
-      
+
       await page.render(renderContext).promise;
-      
-      console.log("[OrderService] PDF başarıyla resme dönüştürüldü (Scale: 3.0).");
-      return canvas.toBuffer('image/png');
+
+      console.log(
+        "[OrderService] PDF başarıyla resme dönüştürüldü (Scale: 3.0).",
+      );
+      return canvas.toBuffer("image/png");
     } catch (error) {
       console.error("[OrderService] PDF Görünümü oluşturma hatası:", error);
       throw error;
@@ -757,7 +895,7 @@ export class OrderService {
         item.status = status;
         item.updatedAt = new Date().toISOString();
         order.updatedAt = new Date().toISOString();
-        
+
         // Supabase güncelle
         await this.supabase.upsertOrderItem(item, order.id);
         this.saveToLocalFile();
@@ -779,7 +917,7 @@ export class OrderService {
         item.distributedAt = new Date().toISOString();
         item.updatedAt = new Date().toISOString();
         order.updatedAt = new Date().toISOString();
-        
+
         // Supabase güncelle
         await this.supabase.upsertOrderItem(item, order.id);
         this.saveToLocalFile();
@@ -792,7 +930,11 @@ export class OrderService {
   /**
    * Kumaş durumunu günceller ve not ekler.
    */
-  public async updateFabricStatus(itemId: string, arrived: boolean, note?: string) {
+  public async updateFabricStatus(
+    itemId: string,
+    arrived: boolean,
+    note?: string,
+  ) {
     for (const order of this.orders) {
       const item = order.items.find((i) => i.id === itemId);
       if (item && item.fabricDetails) {
@@ -801,7 +943,7 @@ export class OrderService {
         item.status = arrived ? "bekliyor" : "bekliyor"; // Eksikse de bekliyor ama notu var
         item.updatedAt = new Date().toISOString();
         order.updatedAt = new Date().toISOString();
-        
+
         // Supabase güncelle
         await this.supabase.upsertOrderItem(item, order.id);
         this.saveToLocalFile();
@@ -815,18 +957,20 @@ export class OrderService {
     return this.orders;
   }
 
-  public getOrderItemById(itemId: string): { order: OrderDetail, item: OrderItem } | null {
+  public getOrderItemById(
+    itemId: string,
+  ): { order: OrderDetail; item: OrderItem } | null {
     for (const order of this.orders) {
-      const item = order.items.find(i => i.id === itemId);
+      const item = order.items.find((i) => i.id === itemId);
       if (item) return { order, item };
     }
     return null;
   }
 
-  public getActiveTrackingItems(): { order: OrderDetail, item: OrderItem }[] {
-    const activeItems: { order: OrderDetail, item: OrderItem }[] = [];
-    this.orders.forEach(order => {
-      order.items.forEach(item => {
+  public getActiveTrackingItems(): { order: OrderDetail; item: OrderItem }[] {
+    const activeItems: { order: OrderDetail; item: OrderItem }[] = [];
+    this.orders.forEach((order) => {
+      order.items.forEach((item) => {
         if (!["hazir", "sevk_edildi", "arsivlendi"].includes(item.status)) {
           activeItems.push({ order, item });
         }
@@ -840,34 +984,38 @@ export class OrderService {
    * "uretimde" statüsünde ve distributedAt'ten beri belirli gün geçmiş olanlar.
    * Ahşap/Metal/Dekorasyon → 20 gün, Dikişhane/Döşemehane → 15 gün
    */
-  public getItemsNeedingFollowUp(daysAfter: number = 20): { order: OrderDetail, item: OrderItem }[] {
+  public getItemsNeedingFollowUp(
+    daysAfter: number = 20,
+  ): { order: OrderDetail; item: OrderItem }[] {
     const deptTimelines: Record<string, number> = {
-      "ahşap": 20,
+      ahşap: 20,
       "metal üretimi": 20,
       "mobilya dekorasyon": 20,
       "karkas üretimi": 20,
-      "dikişhane": 15,
-      "döşemehane": 15,
+      dikişhane: 15,
+      döşemehane: 15,
     };
     const now = new Date();
-    const results: { order: OrderDetail, item: OrderItem }[] = [];
+    const results: { order: OrderDetail; item: OrderItem }[] = [];
 
-    this.orders.forEach(order => {
-      order.items.forEach(item => {
+    this.orders.forEach((order) => {
+      order.items.forEach((item) => {
         if (
           item.status === "uretimde" &&
           item.distributedAt &&
           item.assignedWorker
         ) {
           // Departmana göre takip süresini belirle
-          const deptKey = Object.keys(deptTimelines).find(d =>
-            item.department.toLowerCase().includes(d)
+          const deptKey = Object.keys(deptTimelines).find((d) =>
+            item.department.toLowerCase().includes(d),
           );
           if (!deptKey) return;
 
           const requiredDays = deptTimelines[deptKey];
           const dist = new Date(item.distributedAt);
-          const daysPassed = Math.floor((now.getTime() - dist.getTime()) / (1000 * 60 * 60 * 24));
+          const daysPassed = Math.floor(
+            (now.getTime() - dist.getTime()) / (1000 * 60 * 60 * 24),
+          );
           if (daysPassed >= requiredDays) {
             results.push({ order, item });
           }
@@ -881,10 +1029,12 @@ export class OrderService {
    * Siparişteki diğer kalemlerden birinin "Boyahane" departmanında olup olmadığını kontrol eder.
    */
   public orderNeedsPaint(orderId: string): boolean {
-    const order = this.orders.find(o => o.id === orderId);
+    const order = this.orders.find((o) => o.id === orderId);
     if (!order) return false;
-    return order.items.some(item =>
-      item.department.toLowerCase().includes("boya") && item.status === "bekliyor"
+    return order.items.some(
+      (item) =>
+        item.department.toLowerCase().includes("boya") &&
+        item.status === "bekliyor",
     );
   }
 
@@ -892,10 +1042,12 @@ export class OrderService {
    * Siparişin boya kalemlerini bulur.
    */
   public getPaintItemsForOrder(orderId: string): OrderItem[] {
-    const order = this.orders.find(o => o.id === orderId);
+    const order = this.orders.find((o) => o.id === orderId);
     if (!order) return [];
-    return order.items.filter(item =>
-      item.department.toLowerCase().includes("boya") && item.status === "bekliyor"
+    return order.items.filter(
+      (item) =>
+        item.department.toLowerCase().includes("boya") &&
+        item.status === "bekliyor",
     );
   }
 }

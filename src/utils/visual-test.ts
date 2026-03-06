@@ -27,14 +27,19 @@ async function runTest() {
     imageBuffer = fs.readFileSync(sampleImagePath);
     logger.info(`Using sample image: ${sampleImagePath}`);
   } else {
-    logger.warn("Sample image (test-product.jpg) not found. Creating a dummy buffer for simulation...");
+    logger.warn(
+      "Sample image (test-product.jpg) not found. Creating a dummy buffer for simulation...",
+    );
     imageBuffer = Buffer.alloc(100, "dummy-image-data");
   }
 
   // 3. Generate Embedding
   logger.info("Generating embedding for the image...");
-  const vector = await imageEmbeddingService.generateImageEmbedding(imageBuffer, "jpg");
-  
+  const vector = await imageEmbeddingService.generateImageEmbedding(
+    imageBuffer,
+    "jpg",
+  );
+
   if (vector && vector.length === 1536) {
     logger.info("✅ Embedding generated successfully (1536 dimensions).");
   } else {
@@ -48,7 +53,7 @@ async function runTest() {
     productName: "Test Sandalye",
     customerName: "Test Müşteri",
     orderNo: "ORD-TEST-001",
-    tags: ["test", "modern", "ahşap"]
+    tags: ["test", "modern", "ahşap"],
   };
 
   logger.info("Upserting image to Qdrant visual memory...");
@@ -56,6 +61,6 @@ async function runTest() {
   logger.info("✅ Test completed successfully.");
 }
 
-runTest().catch(err => {
+runTest().catch((err) => {
   logger.error({ err }, "Test script error");
 });

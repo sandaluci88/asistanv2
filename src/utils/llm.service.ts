@@ -37,7 +37,7 @@ export class OpenRouterService {
     userMessage: string,
     context: string = "",
     history: any[] = [],
-    images: any[] = []
+    images: any[] = [],
   ) {
     try {
       const messages: any[] = [
@@ -46,22 +46,31 @@ export class OpenRouterService {
         {
           role: "user",
           content: [
-            { type: "text", text: `Bağlam Bilgisi: ${context}\n\nKullanıcı Mesajı: ${userMessage}` },
-            ...images
+            {
+              type: "text",
+              text: `Bağlam Bilgisi: ${context}\n\nKullanıcı Mesajı: ${userMessage}`,
+            },
+            ...images,
           ],
         },
       ];
 
-      const completion = await this.client.chat.completions.create({
-        model: process.env.OPENROUTER_MODEL || "qwen/qwen3.5-35b-a3b",
-        messages: messages,
-      }, {
-        timeout: 60000 // 60 saniye zaman aşımı
-      });
+      const completion = await this.client.chat.completions.create(
+        {
+          model: process.env.OPENROUTER_MODEL || "qwen/qwen3.5-35b-a3b",
+          messages: messages,
+        },
+        {
+          timeout: 60000, // 60 saniye zaman aşımı
+        },
+      );
 
       return completion.choices[0].message.content;
     } catch (error) {
-      console.error("❌ OpenRouter hatası detayı (Timeout veya API Hatası):", error);
+      console.error(
+        "❌ OpenRouter hatası detayı (Timeout veya API Hatası):",
+        error,
+      );
       return null;
     }
   }

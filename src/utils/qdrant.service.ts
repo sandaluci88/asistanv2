@@ -22,11 +22,11 @@ export class QdrantService {
     try {
       await this.client.getCollections();
       logger.info("✅ Qdrant connection successful");
-      
+
       // Temel koleksiyonları kontrol et/oluştur
       const collections = [
         this.collectionName,
-        process.env.QDRANT_IMAGE_COLLECTION || "sandaluci_visual_memory"
+        process.env.QDRANT_IMAGE_COLLECTION || "sandaluci_visual_memory",
       ];
 
       for (const col of collections) {
@@ -35,7 +35,7 @@ export class QdrantService {
         } catch (e) {
           logger.info(`🔨 Koleksiyon bulunamadı, oluşturuluyor: ${col}`);
           await this.client.createCollection(col, {
-            vectors: { size: 1536, distance: "Cosine" }
+            vectors: { size: 1536, distance: "Cosine" },
           });
         }
       }
@@ -80,23 +80,29 @@ export class QdrantService {
       customerName: string;
       orderNo: string;
       tags: string[];
-    }
+    },
   ) {
-    const collection = process.env.QDRANT_IMAGE_COLLECTION || "sandaluci_visual_memory";
+    const collection =
+      process.env.QDRANT_IMAGE_COLLECTION || "sandaluci_visual_memory";
     try {
       await this.client.upsert(collection, {
-        points: [{
-          id: productId,
-          vector,
-          payload: {
-            ...metadata,
-            updatedAt: new Date().toISOString()
-          }
-        }]
+        points: [
+          {
+            id: productId,
+            vector,
+            payload: {
+              ...metadata,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        ],
       });
       logger.info({ productId }, "✅ Görsel hafızaya kaydedildi.");
     } catch (error) {
-      logger.error({ error, productId, collection }, "❌ Qdrant upsertImage error");
+      logger.error(
+        { error, productId, collection },
+        "❌ Qdrant upsertImage error",
+      );
     }
   }
 }

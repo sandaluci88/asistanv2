@@ -56,12 +56,15 @@ export class StaffService {
           role: s.role,
           phone: s.phone,
           language: s.language || "ru",
-          isMarina: s.is_marina
+          isMarina: s.is_marina,
         }));
         this.saveToLocalFile(); // Yerelde yedekle
       }
     } catch (error) {
-      console.error("❌ Personel DB'den yüklenemedi, yerel dosyaya dönülüyor:", error);
+      console.error(
+        "❌ Personel DB'den yüklenemedi, yerel dosyaya dönülüyor:",
+        error,
+      );
       this.loadFromLocalFile();
     }
   }
@@ -94,8 +97,9 @@ export class StaffService {
 
   public getStaffByDepartment(department: string): Staff[] {
     return this.staffList.filter(
-      (s) => s.department.toLowerCase().includes(department.toLowerCase()) || 
-             department.toLowerCase().includes(s.department.toLowerCase()),
+      (s) =>
+        s.department.toLowerCase().includes(department.toLowerCase()) ||
+        department.toLowerCase().includes(s.department.toLowerCase()),
     );
   }
 
@@ -114,7 +118,7 @@ export class StaffService {
       name: "Test Personeli",
       department: "Test",
       role: "Personnel",
-      language: "ru"
+      language: "ru",
     };
   }
 
@@ -138,7 +142,7 @@ export class StaffService {
       department,
       phone,
       role: "Personnel",
-      language: "ru" as const
+      language: "ru" as const,
     };
 
     try {

@@ -13,15 +13,18 @@ export class ImageEmbeddingService {
   /**
    * Generates a vector embedding for an image.
    * Note: Since Gemini/OpenRouter doesn't directly return embeddings for images via chat,
-   * we will use it to describe the image in detail and then embed the description, 
+   * we will use it to describe the image in detail and then embed the description,
    * or use a specialized model if available.
    * For now, we'll implement a 'Visual Description' to Vector approach.
    */
-  async generateImageEmbedding(imageBuffer: Buffer, extension: string = "jpg"): Promise<number[]> {
+  async generateImageEmbedding(
+    imageBuffer: Buffer,
+    extension: string = "jpg",
+  ): Promise<number[]> {
     try {
       const base64Image = imageBuffer.toString("base64");
       const mimeType = `image/${extension === "png" ? "png" : "jpeg"}`;
-      
+
       const prompt = `
         Bu ürünü detaylıca analiz et ve teknik özelliklerini açıkla.
         Ürün tipi, malzemesi, rengi, tasarım stili (modern, klasik, rustik vb.) ve belirgin özelliklerini belirt.
@@ -33,19 +36,24 @@ export class ImageEmbeddingService {
         prompt,
         "Görsel Analiz ve Ürün Tanımlama Modu.",
         [], // No existing messages
-        [{
-          type: "image_url",
-          image_url: {
-            url: `data:${mimeType};base64,${base64Image}`
-          }
-        }]
+        [
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:${mimeType};base64,${base64Image}`,
+            },
+          },
+        ],
       );
 
       if (!description) {
         throw new Error("Görsel analiz başarısız oldu.");
       }
 
-      logger.info({ description: description.substring(0, 100) + "..." }, "Görsel analiz tamamlandı.");
+      logger.info(
+        { description: description.substring(0, 100) + "..." },
+        "Görsel analiz tamamlandı.",
+      );
 
       // Embed the description
       // Note: In a real scenario, we'd use a dedicated embedding model.
@@ -65,6 +73,6 @@ export class ImageEmbeddingService {
     for (let i = 0; i < text.length; i++) {
       vector[i % 1536] += text.charCodeAt(i) / 1000;
     }
-    return vector.map(v => Math.tanh(v)); // Normalize
+    return vector.map((v) => Math.tanh(v)); // Normalize
   }
 }

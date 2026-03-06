@@ -30,7 +30,7 @@ export class CronService {
   private proactiveService: ProactiveService;
   private bot: Bot;
   private targetChatId: string | number;
-  
+
   private tasksFile = path.resolve("./data/tasks.json");
   private activeDynamicJobs: Map<string, cron.ScheduledTask> = new Map();
 
@@ -43,7 +43,7 @@ export class CronService {
     this.orderService = new OrderService();
     this.kenanService = new KenanService();
     this.proactiveService = new ProactiveService(bot, Number(chatId));
-    
+
     // Klasör yoksa oluştur
     const dir = path.dirname(this.tasksFile);
     if (!fs.existsSync(dir)) {
@@ -54,7 +54,9 @@ export class CronService {
   public static getInstance(bot?: Bot, chatId?: string | number): CronService {
     if (!CronService.instance) {
       if (!bot || !chatId) {
-        throw new Error("CronService requires bot and chatId for initialization");
+        throw new Error(
+          "CronService requires bot and chatId for initialization",
+        );
       }
       CronService.instance = new CronService(bot, chatId);
     }
@@ -64,53 +66,89 @@ export class CronService {
   public init() {
     // Mevcut sabit görevler
     this.initStaticJobs();
-    
+
     // Dinamik görevleri yükle ve başlat
     this.loadAndScheduleDynamicTasks();
   }
 
   private initStaticJobs() {
     // Sabah Brifingi (Haftaiçi 08:30)
-    cron.schedule("30 8 * * 1-5", () => {
-      this.sendMorningBriefing();
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "30 8 * * 1-5",
+      () => {
+        this.sendMorningBriefing();
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     // Akşam Brifingi (Haftaiçi 18:00)
-    cron.schedule("0 18 * * 1-5", () => {
-      this.sendEveningBriefing();
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "0 18 * * 1-5",
+      () => {
+        this.sendEveningBriefing();
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     // Cenk Bey: Malzeme Takibi Hatırlatması (Her gün 10:00)
-    cron.schedule("0 10 * * *", () => {
-      this.checkPendingMaterials();
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "0 10 * * *",
+      () => {
+        this.checkPendingMaterials();
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     // --- PERSONEL KONTROL MESAJLARI ---
-    cron.schedule("0 9 * * 1-5", () => {
-      this.sendStaffControlMessage("morning");
-    }, { timezone: "Asia/Almaty" });
-    cron.schedule("30 13 * * 1-5", () => {
-      this.sendStaffControlMessage("noon");
-    }, { timezone: "Asia/Almaty" });
-    cron.schedule("30 17 * * 1-5", () => {
-      this.sendStaffControlMessage("evening");
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "0 9 * * 1-5",
+      () => {
+        this.sendStaffControlMessage("morning");
+      },
+      { timezone: "Asia/Almaty" },
+    );
+    cron.schedule(
+      "30 13 * * 1-5",
+      () => {
+        this.sendStaffControlMessage("noon");
+      },
+      { timezone: "Asia/Almaty" },
+    );
+    cron.schedule(
+      "30 17 * * 1-5",
+      () => {
+        this.sendStaffControlMessage("evening");
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     // KUMAŞ TAKİP: 24 Saati geçen kumaş onaylarını kontrol et (Her 4 saatte bir)
-    cron.schedule("0 */4 * * *", () => {
-      this.checkFabricStatus();
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "0 */4 * * *",
+      () => {
+        this.checkFabricStatus();
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     // ÜRETİM TAKİP: İş emri dağıtımından 20 gün sonra bitti mi sorgusu (Her gün 10:30)
-    cron.schedule("30 10 * * 1-6", () => {
-      this.checkProductionStatus();
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "30 10 * * 1-6",
+      () => {
+        this.checkProductionStatus();
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     // --- PROAKTİF KONTROL (HEARTBEAT) ---
     // Kazakistan saati ile sabah 06:00 - 20:00 arası her saat başı çalışır.
-    cron.schedule("0 6-20 * * *", () => {
-      this.proactiveService.runHeartbeat();
-    }, { timezone: "Asia/Almaty" });
+    cron.schedule(
+      "0 6-20 * * *",
+      () => {
+        this.proactiveService.runHeartbeat();
+      },
+      { timezone: "Asia/Almaty" },
+    );
   }
 
   // --- DINAMIK GÖREV YÖNETIMİ ---
@@ -136,13 +174,18 @@ export class CronService {
     }
   }
 
-  public addDynamicTask(chatId: string | number, message: string, triggerTimeStr: string, isRecurring: boolean = false): DynamicTask {
+  public addDynamicTask(
+    chatId: string | number,
+    message: string,
+    triggerTimeStr: string,
+    isRecurring: boolean = false,
+  ): DynamicTask {
     const newTask: DynamicTask = {
       id: uuidv4(),
       chatId,
       message,
       triggerTimeStr,
-      isRecurring
+      isRecurring,
     };
 
     const tasks = this.getStoredTasks();
@@ -155,40 +198,53 @@ export class CronService {
 
   private loadAndScheduleDynamicTasks() {
     const tasks = this.getStoredTasks();
-    tasks.forEach(task => this.scheduleJob(task));
+    tasks.forEach((task) => this.scheduleJob(task));
     console.log(`✅ ${tasks.length} adet dinamik görev yüklendi.`);
   }
 
   private scheduleJob(task: DynamicTask) {
     if (!cron.validate(task.triggerTimeStr)) {
-      console.error(`❌ Geçersiz cron verisi: ${task.triggerTimeStr} for task ${task.id}`);
+      console.error(
+        `❌ Geçersiz cron verisi: ${task.triggerTimeStr} for task ${task.id}`,
+      );
       this.removeTask(task.id);
       return;
     }
 
-    const job = cron.schedule(task.triggerTimeStr, async () => {
-      try {
-        await this.bot.api.sendMessage(task.chatId, `⏰ *Hatırlatma:* \n\n${task.message}`, {
-          parse_mode: "Markdown",
-        });
-      } catch (err) {
-        console.error(`❌ Hatırlatma gönderilemedi (Chat: ${task.chatId}):`, err);
-      }
+    const job = cron.schedule(
+      task.triggerTimeStr,
+      async () => {
+        try {
+          await this.bot.api.sendMessage(
+            task.chatId,
+            `⏰ *Hatırlatma:* \n\n${task.message}`,
+            {
+              parse_mode: "Markdown",
+            },
+          );
+        } catch (err) {
+          console.error(
+            `❌ Hatırlatma gönderilemedi (Chat: ${task.chatId}):`,
+            err,
+          );
+        }
 
-      // Tek seferlikse dosyadan sil ve durdur
-      if (!task.isRecurring) {
-        job.stop();
-        this.activeDynamicJobs.delete(task.id);
-        this.removeTask(task.id);
-      }
-    }, { timezone: "Asia/Almaty" });
+        // Tek seferlikse dosyadan sil ve durdur
+        if (!task.isRecurring) {
+          job.stop();
+          this.activeDynamicJobs.delete(task.id);
+          this.removeTask(task.id);
+        }
+      },
+      { timezone: "Asia/Almaty" },
+    );
 
     this.activeDynamicJobs.set(task.id, job);
   }
 
   public removeTask(taskId: string) {
     let tasks = this.getStoredTasks();
-    tasks = tasks.filter(t => t.id !== taskId);
+    tasks = tasks.filter((t) => t.id !== taskId);
     this.saveTasks(tasks);
 
     const job = this.activeDynamicJobs.get(taskId);
@@ -249,7 +305,10 @@ export class CronService {
         case "morning":
           // EĞER KENAN AKTİFSE: Özel sabah mesajı oluştur
           if (process.env.ENABLE_KENAN === "true") {
-            message = await this.kenanService.generateCoachingMessage(member, "Sabah ve güne başlama motivasyonu");
+            message = await this.kenanService.generateCoachingMessage(
+              member,
+              "Sabah ve güne başlama motivasyonu",
+            );
           } else {
             message = `☀️ *Günaydın ${member.name}!* \n\nBugün *${member.department}* bölümünde her şey hazır mı? İşini daha iyi yapabilmen için önünde bir engel veya eksik malzeme var mı?`;
           }
@@ -266,7 +325,10 @@ export class CronService {
           parse_mode: "Markdown",
         });
       } catch (error) {
-        console.error(`❌ Personel mesajı gönderilemedi (${member.name}):`, error);
+        console.error(
+          `❌ Personel mesajı gönderilemedi (${member.name}):`,
+          error,
+        );
       }
     }
   }
@@ -276,21 +338,33 @@ export class CronService {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     for (const order of orders) {
-      const fabricPendingItems = order.items.filter(item => 
-        (item.department === "Dikişhane" || item.department === "Kumaş") && 
-        item.status === "bekliyor" &&
-        new Date(item.updatedAt || item.createdAt).getTime() < twentyFourHoursAgo.getTime()
+      const fabricPendingItems = order.items.filter(
+        (item) =>
+          (item.department === "Dikişhane" || item.department === "Kumaş") &&
+          item.status === "bekliyor" &&
+          new Date(item.updatedAt || item.createdAt).getTime() <
+            twentyFourHoursAgo.getTime(),
       );
       for (const item of fabricPendingItems) {
-        const dikişhaneStaff = this.staffService.getStaffByDepartment("Dikişhane");
-        const almira = dikişhaneStaff.find(s => s.name.toLowerCase().includes("almira")) || dikişhaneStaff[0];
+        const dikişhaneStaff =
+          this.staffService.getStaffByDepartment("Dikişhane");
+        const almira =
+          dikişhaneStaff.find((s) => s.name.toLowerCase().includes("almira")) ||
+          dikişhaneStaff[0];
         const alertMsg = `⚠️ *KUMAŞ GECİKME UYARISI* (24 Saat Geçti)\n\nMüşteri: ${order.customerName}\nÜrün: ${item.product}\nKumaş: ${item.fabricDetails?.name || "Belirtilmedi"}\n\nBu siparişin kumaş durumu henüz teyit edilmedi!`;
         if (almira && almira.telegramId) {
-          await this.bot.api.sendMessage(almira.telegramId, alertMsg + "\n\nLütfen Telegram butonları üzerinden durumu güncelleyin.", { parse_mode: "Markdown" });
+          await this.bot.api.sendMessage(
+            almira.telegramId,
+            alertMsg +
+              "\n\nLütfen Telegram butonları üzerinden durumu güncelleyin.",
+            { parse_mode: "Markdown" },
+          );
         }
         const marina = this.staffService.getMarina();
         if (marina && marina.telegramId) {
-          await this.bot.api.sendMessage(marina.telegramId, alertMsg, { parse_mode: "Markdown" });
+          await this.bot.api.sendMessage(marina.telegramId, alertMsg, {
+            parse_mode: "Markdown",
+          });
         }
       }
     }
@@ -312,7 +386,9 @@ export class CronService {
       const itemsToCheck = this.orderService.getItemsNeedingFollowUp(20);
       if (itemsToCheck.length === 0) return;
 
-      console.log(`🔍 Üretim takip: ${itemsToCheck.length} kalem kontrol ediliyor...`);
+      console.log(
+        `🔍 Üretim takip: ${itemsToCheck.length} kalem kontrol ediliyor...`,
+      );
       const summaryLines: string[] = [];
 
       for (const { order, item } of itemsToCheck) {
@@ -331,7 +407,9 @@ export class CronService {
         // Son hatırlatma kontrolü (3 gün içinde tekrar sorma)
         if (item.lastReminderAt) {
           const lastReminder = new Date(item.lastReminderAt);
-          const daysSinceLast = Math.floor((Date.now() - lastReminder.getTime()) / (1000 * 60 * 60 * 24));
+          const daysSinceLast = Math.floor(
+            (Date.now() - lastReminder.getTime()) / (1000 * 60 * 60 * 24),
+          );
           if (daysSinceLast < 3) continue;
         }
 
@@ -339,23 +417,31 @@ export class CronService {
         const questionMsg = t("followup_question", workerLang as any, {
           customer: order.customerName,
           product: item.product,
-          quantity: String(item.quantity)
+          quantity: String(item.quantity),
         });
 
         const keyboard = new InlineKeyboard()
-          .text(t("btn_yes_done", workerLang as any), `production_done:${item.id}`)
-          .text(t("btn_no_ongoing", workerLang as any), `production_ongoing:${item.id}`);
+          .text(
+            t("btn_yes_done", workerLang as any),
+            `production_done:${item.id}`,
+          )
+          .text(
+            t("btn_no_ongoing", workerLang as any),
+            `production_ongoing:${item.id}`,
+          );
 
         await this.bot.api.sendMessage(worker.telegramId, questionMsg, {
           parse_mode: "Markdown",
-          reply_markup: keyboard
+          reply_markup: keyboard,
         });
 
         // lastReminderAt güncelle
         item.lastReminderAt = new Date().toISOString();
         item.updatedAt = new Date().toISOString();
 
-        summaryLines.push(`• ${order.customerName} - ${item.product} → ${workerName} soruldu`);
+        summaryLines.push(
+          `• ${order.customerName} - ${item.product} → ${workerName} soruldu`,
+        );
       }
 
       // Siparişleri kaydet (lastReminderAt güncellendi)
@@ -367,18 +453,19 @@ export class CronService {
         if (marina && marina.telegramId) {
           const marinaLang = marina.language || "ru";
           const summaryText = t("followup_summary_marina", marinaLang as any, {
-            summary: summaryLines.join("\n")
+            summary: summaryLines.join("\n"),
           });
           await this.bot.api.sendMessage(marina.telegramId, summaryText, {
-            parse_mode: "Markdown"
+            parse_mode: "Markdown",
           });
         }
       }
 
-      console.log(`✅ Üretim takip: ${summaryLines.length} personele soru gönderildi.`);
+      console.log(
+        `✅ Üretim takip: ${summaryLines.length} personele soru gönderildi.`,
+      );
     } catch (error) {
       console.error("❌ Üretim takip hatası:", error);
     }
   }
 }
-

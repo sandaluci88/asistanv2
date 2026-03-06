@@ -35,20 +35,22 @@ export class CommandHandler {
     const lang = staffMember?.language || (isBoss ? "tr" : "ru");
 
     if (isBoss) {
-      await ctx.reply(t("welcome_boss", lang as Language), { parse_mode: "Markdown" });
+      await ctx.reply(t("welcome_boss", lang as Language), {
+        parse_mode: "Markdown",
+      });
       return;
     }
 
     if (staffMember) {
       await ctx.reply(
-        t("welcome_staff", lang as Language, { name: staffMember.name, department: staffMember.department }),
+        t("welcome_staff", lang as Language, {
+          name: staffMember.name,
+          department: staffMember.department,
+        }),
         { parse_mode: "Markdown" },
       );
     } else {
-      await ctx.reply(
-        t("welcome_guest", "ru"),
-        { parse_mode: "Markdown" },
-      );
+      await ctx.reply(t("welcome_guest", "ru"), { parse_mode: "Markdown" });
     }
   }
 
@@ -202,7 +204,9 @@ export class CommandHandler {
 
   public async handleDev(ctx: Context) {
     if (!this.isBoss(ctx)) {
-      await ctx.reply("🔒 Geliştirici Modu sadece Barış Bey'in erişimine açıktır.");
+      await ctx.reply(
+        "🔒 Geliştirici Modu sadece Barış Bey'in erişimine açıktır.",
+      );
       return;
     }
 
@@ -215,13 +219,15 @@ export class CommandHandler {
       return;
     }
 
-    await ctx.reply("🔍 *SanaSistans Mimarisi Analiz Ediliyor...*", { parse_mode: "Markdown" });
-    
+    await ctx.reply("🔍 *SanaSistans Mimarisi Analiz Ediliyor...*", {
+      parse_mode: "Markdown",
+    });
+
     // Developer logic will be handled here via LLM
     // For now, we will use a specialized prompt in LLM Service
     const { OpenRouterService } = require("../utils/llm.service");
     const llm = new OpenRouterService();
-    
+
     const technicalPrompt = `Sen bir Yazılım Mimarısısın. SanaSistans (Sanal Asistan) projesinin kod yapısına hakimsin. 
     Proje Yapısı:
     - src/index.ts: Bot giriş noktası
@@ -231,9 +237,12 @@ export class CommandHandler {
     - data/: JSON veritabanı (staff.json vb.)
     
     Kullanıcının (Barış Bey) teknik sorusunu veya geliştirme talebini yanıtla. Kod örnekleri ver.`;
-    
+
     const response = await llm.chat(query, technicalPrompt);
-    await ctx.reply(response || "Üzgünüm, teknik analiz sırasında bir hata oluştu.", { parse_mode: "Markdown" });
+    await ctx.reply(
+      response || "Üzgünüm, teknik analiz sırasında bir hata oluştu.",
+      { parse_mode: "Markdown" },
+    );
   }
 
   public async handleTakip(ctx: Context) {
@@ -252,28 +261,52 @@ export class CommandHandler {
     let message = t("tracking_title", lang) + "\n\n";
     const { InlineKeyboard } = require("grammy");
     const keyboard = new InlineKeyboard();
-    
+
     for (const entry of activeItems) {
       const { order, item } = entry;
-      const statusIcon = item.status === "uretimde" ? "⚙️" : 
-                         item.status === "boyada" ? "🎨" :
-                         item.status === "dikiste" ? "🧵" :
-                         item.status === "dosemede" ? "🪑" : "⏳";
+      const statusIcon =
+        item.status === "uretimde"
+          ? "⚙️"
+          : item.status === "boyada"
+            ? "🎨"
+            : item.status === "dikiste"
+              ? "🧵"
+              : item.status === "dosemede"
+                ? "🪑"
+                : "⏳";
       const statusText = t(`status_${item.status}`, lang);
-      
+
       message += `${statusIcon} *${order.customerName}* - ${item.product}\n`;
       message += `   ┗ ${statusText}\n\n`;
 
       if (item.status === "bekliyor") {
-        keyboard.text(t("btn_start_production", lang), `set_status:${item.id}:uretimde`);
+        keyboard.text(
+          t("btn_start_production", lang),
+          `set_status:${item.id}:uretimde`,
+        );
       } else if (item.status === "uretimde") {
-        keyboard.text(t("btn_send_to_paint", lang), `set_status:${item.id}:boyada`);
-        keyboard.text(t("btn_send_to_sewing", lang), `set_status:${item.id}:dikiste`);
+        keyboard.text(
+          t("btn_send_to_paint", lang),
+          `set_status:${item.id}:boyada`,
+        );
+        keyboard.text(
+          t("btn_send_to_sewing", lang),
+          `set_status:${item.id}:dikiste`,
+        );
       } else if (item.status === "boyada") {
-        keyboard.text(t("btn_send_to_sewing", lang), `set_status:${item.id}:dikiste`);
-        keyboard.text(t("btn_send_to_upholstery", lang), `set_status:${item.id}:dosemede`);
+        keyboard.text(
+          t("btn_send_to_sewing", lang),
+          `set_status:${item.id}:dikiste`,
+        );
+        keyboard.text(
+          t("btn_send_to_upholstery", lang),
+          `set_status:${item.id}:dosemede`,
+        );
       } else if (item.status === "dikiste") {
-        keyboard.text(t("btn_send_to_upholstery", lang), `set_status:${item.id}:dosemede`);
+        keyboard.text(
+          t("btn_send_to_upholstery", lang),
+          `set_status:${item.id}:dosemede`,
+        );
         keyboard.text(t("btn_ready", lang), `set_status:${item.id}:hazir`);
       } else if (item.status === "dosemede") {
         keyboard.text(t("btn_ready", lang), `set_status:${item.id}:hazir`);
@@ -282,13 +315,15 @@ export class CommandHandler {
     }
 
     message += t("tracking_actions_hint", lang);
-    
-    keyboard.text(t("btn_refresh", lang), "refresh_tracking_list").row()
+
+    keyboard
+      .text(t("btn_refresh", lang), "refresh_tracking_list")
+      .row()
       .text(t("btn_archive", lang), "archive_completed_items");
 
-    await ctx.reply(message, { 
+    await ctx.reply(message, {
       parse_mode: "Markdown",
-      reply_markup: keyboard
+      reply_markup: keyboard,
     });
   }
 }

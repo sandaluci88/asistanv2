@@ -35,7 +35,10 @@ Mümkünse mesajın sonuna küçük bir motive edici veya düşündürücü eyle
     `.trim();
   }
 
-  public async generateCoachingMessage(staff: Staff, context: string = "Sabah motivasyonu"): Promise<string> {
+  public async generateCoachingMessage(
+    staff: Staff,
+    context: string = "Sabah motivasyonu",
+  ): Promise<string> {
     try {
       const userMessage = `
 Lütfen aşağıdaki personel için özel bir mesaj hazırla:
@@ -46,7 +49,7 @@ Günün / Durumun Özelliği: ${context}
 
       const messages: any[] = [
         { role: "system", content: this.systemPrompt },
-        { role: "user", content: userMessage }
+        { role: "user", content: userMessage },
       ];
 
       const completion = await this.client.chat.completions.create({
@@ -54,7 +57,10 @@ Günün / Durumun Özelliği: ${context}
         messages: messages,
       });
 
-      return completion.choices[0].message.content || "Sevgili kardeşim, bugün de elinden gelenin en iyisini yapacağına inancım tam. Başarılar dilerim. - Kenan";
+      return (
+        completion.choices[0].message.content ||
+        "Sevgili kardeşim, bugün de elinden gelenin en iyisini yapacağına inancım tam. Başarılar dilerim. - Kenan"
+      );
     } catch (error) {
       console.error("❌ KenanService (OpenRouter) hatası:", error);
       return "Günaydın! Bugün harika işler çıkaracağına eminim. Rast gelsin. - Kenan";

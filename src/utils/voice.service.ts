@@ -11,12 +11,18 @@ dotenv.config();
 export class VoiceService {
   constructor() {}
 
-  public async transcribeVoiceMessage(ctx: Context, fileId: string, lang: string = "ru"): Promise<string | null> {
+  public async transcribeVoiceMessage(
+    ctx: Context,
+    fileId: string,
+    lang: string = "ru",
+  ): Promise<string | null> {
     const groqKey = process.env.GROQ_API_KEY;
 
     if (!groqKey || groqKey.trim() === "") {
-        console.error("❌ GROQ_API_KEY bulunamadı. Lütfen .env dosyasına ekleyin.");
-        return null; // Groq key is mandatory for STT if OpenRouter gives no STT.
+      console.error(
+        "❌ GROQ_API_KEY bulunamadı. Lütfen .env dosyasına ekleyin.",
+      );
+      return null; // Groq key is mandatory for STT if OpenRouter gives no STT.
     }
 
     try {
@@ -25,9 +31,10 @@ export class VoiceService {
 
       const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
       const response = await fetch(fileUrl);
-      
-      if (!response.ok) throw new Error(`Dosya indirilemedi: ${response.statusText}`);
-      
+
+      if (!response.ok)
+        throw new Error(`Dosya indirilemedi: ${response.statusText}`);
+
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
@@ -41,24 +48,27 @@ export class VoiceService {
       formData.append("language", lang);
       formData.append("response_format", "json");
 
-      const groqResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      const groqResponse = await fetch(
+        "https://api.groq.com/openai/v1/audio/transcriptions",
+        {
           method: "POST",
           headers: {
-              "Authorization": `Bearer ${groqKey}`
+            Authorization: `Bearer ${groqKey}`,
           },
           body: formData,
-      });
+        },
+      );
 
-      const data = await groqResponse.json() as any;
+      const data = (await groqResponse.json()) as any;
 
       // İşlem bitince geçici dosyayı temizle
       if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
+        fs.unlinkSync(tempFilePath);
       }
 
       if (!groqResponse.ok) {
-          console.error("Groq çeviri hatası:", data);
-          return null;
+        console.error("Groq çeviri hatası:", data);
+        return null;
       }
 
       return data.text || null;
@@ -68,4 +78,3 @@ export class VoiceService {
     }
   }
 }
-

@@ -1,5 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -12,11 +12,11 @@ export class SupabaseService {
     const key = process.env.SUPABASE_KEY;
 
     if (!url || !key) {
-      console.warn('⚠️ Supabase credentials are missing in .env!');
+      console.warn("⚠️ Supabase credentials are missing in .env!");
       // Error handling or placeholder client
     }
 
-    this.client = createClient(url || '', key || '');
+    this.client = createClient(url || "", key || "");
   }
 
   public static getInstance(): SupabaseService {
@@ -28,17 +28,18 @@ export class SupabaseService {
 
   // --- Orders ---
   async upsertOrder(order: any) {
-    const { data, error } = await this.client
-      .from('orders')
-      .upsert({
+    const { data, error } = await this.client.from("orders").upsert(
+      {
         id: order.id.toString(),
         order_number: order.orderNumber,
         customer_name: order.customerName,
         delivery_date: order.deliveryDate,
         status: order.status,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
-    
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+
     if (error) throw error;
     return data;
   }
@@ -46,11 +47,12 @@ export class SupabaseService {
   // --- Order Items ---
   async upsertOrderItem(item: any, orderId: string, index?: number) {
     // ID yoksa orderId_index formatında üret
-    const itemId = item.id || `${orderId}_${index ?? Math.random().toString(36).substr(2, 9)}`;
-    
-    const { data, error } = await this.client
-      .from('order_items')
-      .upsert({
+    const itemId =
+      item.id ||
+      `${orderId}_${index ?? Math.random().toString(36).substr(2, 9)}`;
+
+    const { data, error } = await this.client.from("order_items").upsert(
+      {
         id: itemId,
         order_id: orderId,
         product: item.product,
@@ -67,8 +69,10 @@ export class SupabaseService {
         fabric_issue_note: item.fabricDetails?.issueNote,
         last_reminder_at: item.lastReminderAt,
         row_index: item.rowIndex,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
 
     if (error) throw error;
     return data;
@@ -76,10 +80,8 @@ export class SupabaseService {
 
   // --- Staff ---
   async getAllStaff() {
-    const { data, error } = await this.client
-      .from('staff')
-      .select('*');
-    
+    const { data, error } = await this.client.from("staff").select("*");
+
     if (error) throw error;
     return data;
   }
@@ -89,17 +91,18 @@ export class SupabaseService {
     // Supabase'de id UUID tipinde olduğu için geçerli bir UUID göndermeliyiz.
     const staffId = staff.id && staff.id.length > 10 ? staff.id : undefined;
 
-    const { data, error } = await this.client
-      .from('staff')
-      .upsert({
+    const { data, error } = await this.client.from("staff").upsert(
+      {
         id: staffId, // id varsa gönder, yoksa Supabase üretemiyor (auth.uid() null dönüyor)
         telegram_id: staff.telegramId,
         name: staff.name,
         department: staff.department,
         role: staff.role,
         phone: staff.phone,
-        is_marina: staff.isMarina
-      }, { onConflict: 'telegram_id' });
+        is_marina: staff.isMarina,
+      },
+      { onConflict: "telegram_id" },
+    );
 
     if (error) throw error;
     return data;
@@ -118,10 +121,10 @@ export class SupabaseService {
   // --- Queries ---
   async getActiveOrders() {
     const { data, error } = await this.client
-      .from('orders')
-      .select('*, order_items(*)')
-      .neq('status', 'archived');
-    
+      .from("orders")
+      .select("*, order_items(*)")
+      .neq("status", "archived");
+
     if (error) throw error;
     return data;
   }
