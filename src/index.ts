@@ -1191,18 +1191,38 @@ if (chatId) {
   console.log("📧 Gmail İzleme Aktif Edildi.");
 }
 
-// Health Check Sunucusu (Coolify için)
-const port = process.env.PORT || 3000;
-http
-  .createServer((req, res) => {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("Sandaluci Assistant is running!\n");
-  })
-  .listen(port, () => {
-    console.log(`📡 Health Check sunucusu ${port} portunda aktif.`);
-  });
+// Health Check Sunucusu (Coolify için) - Sadece port verilmişse veya bot aktifse
+const port = process.env.PORT || 3001; // Next.js 3000 kullandığı için varsayılanı 3001 yaptık
+const botEnabled = process.env.BOT_ENABLED !== "false";
 
-// Botu Başlat
-console.log("🚀 Ayça Asistan Ayağa Kalkıyor...");
-// Sunucuyu başlat
-bot.start();
+if (botEnabled) {
+  http
+    .createServer((req, res) => {
+      if (req.url === "/health" || req.url === "/ping") {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("Sandaluci Assistant is healthy!\n");
+      } else {
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("404 Not Found - Use /health for status\n");
+      }
+    })
+    .listen(port, () => {
+      console.log(`📡 Health Check sunucusu ${port} portunda aktif.`);
+    });
+
+  // Botu Başlat
+  console.log("🚀 Ayça Asistan Ayağa Kalkıyor...");
+  bot.start().catch((err) => {
+    if (err.description?.includes("Conflict")) {
+      console.error(
+        "⚠️ [Telegram Conflict] Bot başka bir yerde zaten çalışıyor. Yerel bot başlatılamadı.",
+      );
+    } else {
+      console.error("❌ Bot hatası:", err);
+    }
+  });
+} else {
+  console.log(
+    "ℹ️ BOT_ENABLED=false olduğu için Telegram botu ve Health Check başlatılmadı.",
+  );
+}
