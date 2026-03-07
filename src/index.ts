@@ -1192,16 +1192,16 @@ if (chatId) {
 }
 
 // Health Check Sunucusu (Coolify için)
-const port = 3001; // Next.js 3000 ile çakışmaması için 3001'e sabitliyoruz
+const port = process.env.PORT || 3000; // Coolify varsayılanı 3000
 const botEnabled = process.env.BOT_ENABLED !== "false";
 
 if (botEnabled) {
   http
     .createServer((req, res) => {
-      // Root dahil tüm sağlık yolları 200 dönmeli ki Coolify "unhealthy" demesin
+      // Root ve sağlık yolları 200 dönmeli
       if (req.url === "/health" || req.url === "/ping" || req.url === "/") {
         res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end("Sandaluci Assistant Bot is healthy!\n");
+        res.end("Sandaluci Assistant is healthy!\n");
       } else {
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("404 Not Found\n");
