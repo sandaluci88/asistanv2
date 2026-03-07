@@ -57,3 +57,21 @@ ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON public.staff FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON public.orders FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
+
+-- 4. Visual Memory Table (Vector Storage)
+CREATE TABLE IF NOT EXISTS public.visual_memory (
+    id TEXT PRIMARY KEY,
+    product_name TEXT,
+    customer_name TEXT,
+    order_id TEXT REFERENCES public.orders(id) ON DELETE CASCADE,
+    vector vector(1024),
+    file_path TEXT,
+    tags TEXT[],
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS for visual_memory
+ALTER TABLE public.visual_memory ENABLE ROW LEVEL SECURITY;
+
+-- Allow all for everyone (Soft RLS)
+CREATE POLICY "Allow all" ON public.visual_memory FOR ALL USING (true) WITH CHECK (true);
