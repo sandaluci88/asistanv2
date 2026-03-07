@@ -118,6 +118,49 @@ export class SupabaseService {
     return true;
   }
 
+  // --- Visual Memory (pgvector) ---
+  async upsertVisualMemory(
+    id: string,
+    productName: string,
+    customerName: string,
+    orderId: string,
+    tags: string[],
+    vector: number[],
+    filePath: string
+  ) {
+    const { data, error } = await this.client.from("visual_memory").upsert(
+      {
+        id,
+        product_name: productName,
+        customer_name: customerName,
+        order_id: orderId,
+        tags,
+        vector, // pgvector column
+        file_path: filePath,
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+    if (error) throw error;
+    return data;
+  }
+
+  async searchVisualMemory(queryVector: number[], matchThreshold = 0.7, matchCount = 3) {
+    const { data, error } = await this.client.rpc('match_visual_memory', {
+      query_embedding: queryVector,
+      match_threshold: matchThreshold,
+      match_count: matchCount
+    });
+
+    if (error) {
+      console.error("Supabase RPC Error match_visual_memory:", error);
+      throw error;
+    }
+
+    return data;
+  }
+
   // --- Queries ---
   async getActiveOrders() {
     const { data, error } = await this.client

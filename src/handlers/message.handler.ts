@@ -1,6 +1,6 @@
 import { Context } from "grammy";
 import { ProductionService } from "../utils/production.service";
-import { QdrantService } from "../utils/qdrant.service";
+import { SupabaseService } from "../utils/supabase.service";
 import { OpenRouterService } from "../utils/llm.service";
 import { StaffService } from "../utils/staff.service";
 import { OrderService } from "../utils/order.service";
@@ -8,7 +8,7 @@ import { VoiceService } from "../utils/voice.service";
 
 export class MessageHandler {
   private productionService: ProductionService;
-  private qdrantService: QdrantService;
+  private supabaseService: SupabaseService;
   private llmService: OpenRouterService;
   private staffService: StaffService;
   private orderService: OrderService;
@@ -16,7 +16,7 @@ export class MessageHandler {
 
   constructor() {
     this.productionService = new ProductionService();
-    this.qdrantService = new QdrantService();
+    this.supabaseService = SupabaseService.getInstance();
     this.llmService = new OpenRouterService();
     this.staffService = StaffService.getInstance();
     this.orderService = new OrderService();
@@ -181,14 +181,10 @@ export class MessageHandler {
       return;
     }
 
-    // Qdrant'tan bağlam sorgula (Opsiyonel/Geliştirilecek)
+    // Supabase'den bağlam sorgula (Opsiyonel/Geliştirilecek)
     let context = "";
-    const isQdrantReady = await this.qdrantService.checkConnection();
-
-    if (isQdrantReady) {
-      // Şimdilik sadece bağlantı loguna ekliyoruz, ilerde embedding araması eklenebilir.
-      context = "Sandaluci üretim veritabanı aktif.";
-    }
+    // Şimdilik sadece bağlantı loguna ekliyoruz, ilerde embedding araması eklenebilir.
+    context = "Sandaluci üretim veritabanı aktif (Supabase PGVector).";
 
     const response = await this.llmService.chat(text, context);
 

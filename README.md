@@ -18,7 +18,7 @@ Bu bölüm, projenin başından sonuna kadar geçirdiği evreleri ve teknik baş
 - **Aşama 1: Veri Yakalama:** Gmail üzerinden gelen karmaşık sipariş formlarını (Excel/PDF) yapay zeka ile okuma yeteneği eklendi.
 - **Aşama 2: Departman Dağıtımı:** Tek bir siparişi parçalara bölüp; Karkas, Dikişhane ve Döşemehane'ye ilgili kısımları resimli olarak gönderme (Mult-Dept Logic) kuruldu.
 - **Aşama 3: Personel & Verimlilik:** Parça başı (Piecework) takip sistemi ve "Marina" onay mekanizması ile üretim disiplini sağlandı.
-- **Aşama 4: Görsel Hafıza:** Qdrant vektör veritabanı ile geçmiş ürün görsellerinden benzerlik araması yapabilen "Görsel Bellek" entegre edildi.
+- **Aşama 4: Görsel Hafıza:** Supabase (pgvector) vektör veritabanı ile geçmiş ürün görsellerinden benzerlik araması yapabilen "Görsel Bellek" entegre edildi. Görseller VPS üzerindeki yerel depolama biriminde güvenle saklanır.
 
 ### 3. Son Büyük Güncelleme: Ayça Developer Mode
 
@@ -32,15 +32,14 @@ Bu bölüm, projenin başından sonuna kadar geçirdiği evreleri ve teknik baş
 
 ## 🌟 Öne Çıkan Özellikler (Mart 2026 Güncellemesi)
 
-### 1. Ayça Geliştirici Modu (Self-Improvement) - [YENİ]
+### 2. Hibrit Görsel Depolama & Vektör Hafızası
 
-- **Kabiliyet:** Ayça artık kendi kod yapısını, mimarisini ve veritabanı şemasını analiz edebilir.
-- **Komut:** `/dev` (veya `!düzelt`). Sadece **Barış Bey** (SuperAdmin) tarafından kullanılabilir.
-- **Kullanım:** Ayça'ya teknik sorular sorabilir veya yeni özellikler için kod taslakları hazırlatabilirsiniz.
+- **Teknoloji:** Qdrant'tan **Supabase (pgvector)** altyapısına geçiş yapıldı.
+- **Performans:** Vektör aramaları artık doğrudan ana veritabanı (SQL) üzerinde çalışarak gecikmeyi (latency) minimize eder.
+- **VPS Depolama:** Orijinal ürün resimleri bulut yerine doğrudan VPS üzerindeki `data/images` klasöründe saklanır, bu da maliyetleri düşürür ve erişim hızını artırır.
 
-- **Dağıtım:** İskelet için **Karkas/Metal/Ahşap Boya** departmanlarına resimli iş emirleri **otomatik ve anında** gönderilir. Kılıf için **Dikişhane**, final montaj için **Döşemehane** birimlerine ise Marina Hanım'ın seçiminden sonra dağıtılır.
+### 3. Otomatik & Akıllı Üretim Dağıtımı
 
-- **Seçim Önceliği:** Karkas, Metal ve Ahşap Boya gibi birimlere iş emirleri hemen gider. Sadece Dikiş/Döşeme gibi manuel atama gereken birimler için Marina Hanım personelleri seçmeden "Dağıtımı Başlat" butonu aktif olmaz.
 - **Hata Önleme:** Bu hibrit (otomatik + manuel) akış sayesinde iskelet üretimi gecikmeden başlar, döşeme ekibi ise doğru zamanda göreve çağrılır.
 - **Senkronize Rapor:** Dağıtım raporu tüm birimlere (otomatik ve manuel) iş emirleri ulaştıktan sonra en son özet olarak Marina Hanım'a iletilir.
 
@@ -72,8 +71,8 @@ Bu bölüm, projenin başından sonuna kadar geçirdiği evreleri ve teknik baş
 ## 🛠️ Teknik Altyapı
 
 - **Model:** OpenRouter üzerinden `google/gemini-3-flash-preview` (Yüksek hızlı ve zeki JSON analizi).
-- **Veritabanı:** Supabase (SQL) & Qdrant (Vektör - Otomatik koleksiyon yönetimi aktif).
-- **Arşivleme:** İşlenen sipariş formları ve üretilen PDF iş emirleri tarihli klasör yapısında (`data/orders/YYYY-MM-DD`) saklanır.
+- **Veritabanı:** Supabase (SQL & pgvector - Vektör aramaları entegre).
+- **Arşivleme:** İşlenen sipariş formları `data/orders` altında, ürün görselleri ise `data/images` altında VPS üzerinde saklanır.
 - **Deployment:** Docker & Coolify (Healthcheck aktif).
 
 ## 🚀 Kurulum ve Veritabanı Hazırlığı

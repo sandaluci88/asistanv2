@@ -1,4 +1,3 @@
-import { QdrantClient } from "@qdrant/js-client-rest";
 import { createClient } from "@supabase/supabase-js";
 import { ImapFlow } from "imapflow";
 import OpenAI from "openai";
@@ -16,7 +15,6 @@ export interface DiagnosticResult {
 }
 
 export class DoctorService {
-  private qdrantClient: QdrantClient;
   private supabaseUrl: string;
   private supabaseKey: string;
   private openai: OpenAI;
@@ -25,13 +23,6 @@ export class DoctorService {
     // SSL bypass
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-    this.qdrantClient = new QdrantClient({
-      url:
-        process.env.QDRANT_URL?.replace(/\/$/, "") ||
-        "https://f504c5e3-9607-4b22-86d7-cb77e1b922e6.eu-central-1-0.aws.cloud.qdrant.io:6333",
-      apiKey: process.env.QDRANT_API_KEY,
-      checkCompatibility: false,
-    });
     this.supabaseUrl = process.env.SUPABASE_URL || "";
     this.supabaseKey = process.env.SUPABASE_KEY || "";
     this.openai = new OpenAI({
@@ -40,58 +31,39 @@ export class DoctorService {
     });
   }
 
-  public async checkQdrant(): Promise<DiagnosticResult> {
-    const rawUrl =
-      process.env.QDRANT_URL ||
-      "https://f504c5e3-9607-4b22-86d7-cb77e1b922e6.eu-central-1-0.aws.cloud.qdrant.io:6333";
-    const url = rawUrl.trim().replace(/\/$/, "");
-    const apiKey = process.env.QDRANT_API_KEY;
-
-    try {
-      // 1. Raw Fetch Attempt without the problematic 'agent' property
-      // We rely on globally set NODE_TLS_REJECT_UNAUTHORIZED = "0"
-      let fetchDetails = "N/A";
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-        const response = await fetch(`${url}/healthz`, {
-          signal: controller.signal,
-          headers: apiKey ? { "api-key": apiKey } : {},
-          // @ts-ignore - Re-introducing the agent that works in checkNetwork
-          agent: new (require("https").Agent)({ rejectUnauthorized: false }),
-        });
-
-        clearTimeout(timeoutId);
-        fetchDetails = `HTTP ${response.status} ${response.statusText}`;
-        if (!response.ok) throw new Error(`Status: ${response.status}`);
-      } catch (fetchErr: any) {
-        throw new Error(
-          `Raw Fetch Failed (Status: ${fetchDetails}): ${fetchErr.message}`,
-        );
-      }
-
-      // 2. Client attempt
-      await this.qdrantClient.getCollections();
+  public async checkVectorMemory(): Promise<DiagnosticResult> {
+    if (!this.supabaseUrl || !this.supabaseKey) {
       return {
-        service: "Qdrant",
+        service: "Vector Memory (pgvector)",
+        status: "WARNING",
+        message: "Supabase kimlik bilgileri eksik, vektör kontrolü yapılamadı.",
+      };
+    }
+    const supabase = createClient(this.supabaseUrl, this.supabaseKey);
+    try {
+      const { error } = await supabase.from("visual_memory").select("id").limit(1);
+      if (error) {
+        if (error.message.includes("does not exist")) {
+           return {
+             service: "Vector Memory (pgvector)",
+             status: "ERROR",
+             message: "Hata: visual_memory tablosu bulunamadı.",
+             remedy: "Supabase SQL Editor üzerinden visual_memory tablosunu oluşturun."
+           };
+        }
+        throw error;
+      }
+      return {
+        service: "Vector Memory (pgvector)",
         status: "OK",
-        message: `Bağlantı başarılı. (URL: ${url})`,
+        message: "Bağlantı başarılı ve pgvector tablosu aktif.",
       };
     } catch (error: any) {
-      let remedy = "QDRANT_URL ve QDRANT_API_KEY değişkenlerini kontrol edin.";
-      const errorMsg = error.message || "Bilinmeyen hata";
-
-      if (errorMsg.includes("fetch failed") || errorMsg.includes("aborted")) {
-        remedy =
-          "Ağ Zaman Aşımı! SSL bypass devrede olmasına rağmen erişim yok. Cloudflare veya WAF ayarlarını kontrol edin.";
-      }
-
       return {
-        service: "Qdrant",
+        service: "Vector Memory (pgvector)",
         status: "ERROR",
-        message: `Hata: ${errorMsg}\nURL: ${url}`,
-        remedy,
+        message: `Hata: ${error.message}`,
+        remedy: "Supabase ve pgvector eklentisi ayarlarını kontrol edin.",
       };
     }
   }
@@ -173,20 +145,7 @@ export class DoctorService {
   }
 
   public async checkNetwork(): Promise<DiagnosticResult> {
-    const qdrantUrl = new URL(
-      process.env.QDRANT_URL ||
-        "https://f504c5e3-9607-4b22-86d7-cb77e1b922e6.eu-central-1-0.aws.cloud.qdrant.io:6333",
-    );
-
     const targets = [
-      {
-        host: qdrantUrl.hostname,
-        port: qdrantUrl.port
-          ? parseInt(qdrantUrl.port)
-          : qdrantUrl.protocol === "https:"
-            ? 443
-            : 80,
-      },
       { host: "google.com", port: 443 }, // Internet check
       { host: "aejhzxvuegchakaknwts.supabase.co", port: 443 }, // Supabase check
     ];
@@ -223,7 +182,7 @@ export class DoctorService {
 
   public async runFullDiagnostics(): Promise<DiagnosticResult[]> {
     return [
-      await this.checkQdrant(),
+      await this.checkVectorMemory(),
       await this.checkNetwork(),
       await this.checkSupabase(),
       await this.checkLLM(),

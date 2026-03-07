@@ -7,7 +7,6 @@ import { OpenRouterService } from "./llm.service";
 import { StaffService } from "./staff.service";
 import { XlsxUtils, ExcelRow } from "./xlsx-utils";
 import { ImageEmbeddingService } from "./image-embedding.service";
-import { QdrantService } from "./qdrant.service";
 import { SupabaseService } from "./supabase.service";
 import { pino } from "pino";
 
@@ -69,7 +68,6 @@ export class OrderService {
   private llmService: OpenRouterService;
   private staffService: StaffService;
   private imageEmbeddingService: ImageEmbeddingService;
-  private qdrantService: QdrantService;
   private supabase: SupabaseService;
 
   constructor() {
@@ -79,7 +77,6 @@ export class OrderService {
     this.llmService = new OpenRouterService();
     this.staffService = StaffService.getInstance();
     this.imageEmbeddingService = new ImageEmbeddingService();
-    this.qdrantService = new QdrantService();
     this.supabase = SupabaseService.getInstance();
     this.ensureDirectoryExists();
     this.loadOrdersFromSupabase(); // Başlangıçta asenkron yükleme başlar
@@ -770,31 +767,54 @@ export class OrderService {
   }
 
   /**
-   * Ürün görsellerini görsel hafızaya kaydeder.
+   * Ürün görsellerini yerel diske kaydeder ve vektörlerini Supabase'e (pgvector) yollar.
    */
   async saveToVisualMemory(order: OrderDetail) {
+    // Görseller için yerel klasör (data/images/YYYY-MM-DD) oluştur
+    const today = new Date().toISOString().split("T")[0];
+    const imageDir = path.join(process.cwd(), "data", "images", today);
+
+    if (!fs.existsSync(imageDir)) {
+      fs.mkdirSync(imageDir, { recursive: true });
+    }
+
     for (const item of order.items) {
       if (item.imageBuffer) {
         try {
           console.log(`🧠 Görsel hafıza işleniyor: ${item.product}`);
+          const extension = item.imageExtension || "jpg";
+
+          // 1. Resmi Yerel Klasöre Kaydet
+          const safeProductName = item.product.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+          const fileName = `${order.id}_${item.id}_${safeProductName}_${Date.now()}.${extension}`;
+          const filePath = path.join(imageDir, fileName);
+          fs.writeFileSync(filePath, item.imageBuffer);
+
+          // URL adresini /data/images formatında siparişe ekle
+          item.imageUrl = `/data/images/${today}/${fileName}`;
+          
+          // Güncellenmiş siparişi hem lokalin hem Supabase'in görmesi için order güncellensin
+          await this.supabase.upsertOrderItem(item, order.id);
+
+          // 2. Vektörü Çıkar ve Supabase pgvector'a (visual_memory tablosuna) Gönder
           const vector =
             await this.imageEmbeddingService.generateImageEmbedding(
               item.imageBuffer,
-              item.imageExtension || "jpg",
+              extension,
             );
 
-          await this.qdrantService.upsertImage(
-            `${order.id}_${item.product}_${Date.now()}`,
+          await this.supabase.upsertVisualMemory(
+            `${order.id}_${item.id}_${Date.now()}`,
+            item.product,
+            order.customerName,
+            order.id, // Pass the internal UUID/ID of the order, not the order number string
+            [item.department, item.source],
             vector,
-            {
-              productName: item.product,
-              customerName: order.customerName,
-              orderNo: order.orderNumber,
-              tags: [item.department, item.source],
-            },
+            item.imageUrl || ""
           );
+          console.log(`✅ Görsel ve vektör kaydedildi: ${item.product}`);
         } catch (error) {
-          console.error(`❌ Görsel hafıza hatası (${item.product}):`, error);
+          console.error(`❌ Görsel hafıza ve yerel kayıt hatası (${item.product}):`, error);
         }
       }
     }
