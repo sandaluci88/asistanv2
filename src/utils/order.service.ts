@@ -198,7 +198,7 @@ export class OrderService {
       - "İSKELET DURUMU" / "İSKELET": Eğer "YAPILACAK", "İSKELET YAPILACAK" veya karkas gereksinimi varsa -> "Karkas Üretimi" departmanına ata.
       - "DİKİŞ": Eğer "YAPILACAK" veya kumaş bilgisi varsa -> "Dikişhane" departmanına ata.
       - "DÖŞEME": Eğer "YAPILACAK" varsa -> "Döşemehane" departmanına ata.
-      - "KUMAŞ/BİRİM" / "KUMAŞ KODU" / "KUMAŞ": Kumaş detayları.
+      - "KUMAŞ/BİRİM" / "KUMAŞ KODU" / "KUMAŞ": Eğer kumaş bilgisi varsa -> Kumaş tedariki için "Kumaş" departmanına ata.
       - "BOYA" / "CİLA" / "RENK": Boya ve cila detayları (Örn: "72 Koyu Ceviz").
       
       🚨 KRİTİK KURALLAR:
@@ -207,13 +207,14 @@ export class OrderService {
          Örneğin: Dikişhane kalemi için details: "Kumaş: Dorian 12. Dikiş yapılacak."
          Örneğin: Karkas üretimi için details: "Boya: 72 Ceviz. İskelet üretimi."
       3. FABRIC VE PAINT ALANLARI: "fabricDetails" ve "paintDetails" nesnelerini her kalem için doldur. Kumaş yoksa boş bırakma, "Yok" yaz.
-      4. DEPARTMAN ATAMA: Sadece şu departmanları kullan: "Karkas Üretimi", "Metal Üretimi", "Mobilya Dekorasyon", "Dikişhane", "Döşemehane", "Boyahane".
+      4. DEPARTMAN ATAMA: Sadece şu departmanları kullan: "Karkas Üretimi", "Metal Üretimi", "Mobilya Dekorasyon", "Dikişhane", "Döşemehane", "Boyahane", "Kumaş".
       5. MÜŞTERİ BİLGİSİ: "MÜŞTERİ ADI" ve varsa "ADRES" alanlarını birleştirerek "customerName" yap.
       
       🚨 DEPARTMAN ÖZEL KURALLARI:
       - Dikişhane: Sadece kumaş kodu ve dikiş detaylarını ekle.
       - Döşemehane: Sadece ürün adı ve döşeme notlarını ekle.
       - Boyahane: Sadece boya rengi ve cila notlarını ekle.
+      - Kumaş: Sadece kumaş kodu ve miktar ihtiyacını ekle.
       
       ÖRNEK:
       Girdi: Ürün: 274 Sandalye, İskelet: YAPILACAK, Dikiş: YAPILACAK, Kumaş: Kadife Yeşil, Boya: 72 Ceviz
