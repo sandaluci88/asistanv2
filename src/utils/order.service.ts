@@ -87,6 +87,26 @@ export class OrderService {
     attachments?: any[],
   ): Promise<OrderDetail | null> {
     try {
+      // 🚨 SİSTEM VE REKLAM MAİLLERİNİ FİLTRELE
+      const lowerSubject = (subject || "").toLowerCase();
+      const lowerContent = (content || "").toLowerCase();
+      const hasExcel = attachments?.some(a => a.filename?.endsWith(".xlsx") || a.filename?.endsWith(".xls"));
+
+      // Eğer mail bir sipariş içermiyorsa (Excel yoksa) ve sistem/bildirim maili gibiyse atla
+      const isSystemMail = 
+        lowerSubject.includes("netlify") || 
+        lowerSubject.includes("welcome") ||
+        lowerSubject.includes("verification") ||
+        lowerSubject.includes("security alert") ||
+        lowerContent.includes("team is ready") ||
+        lowerContent.includes("subscription") ||
+        lowerContent.includes("billing");
+
+      if (isSystemMail && !hasExcel) {
+        console.log(`⏭️ [SKIP] Sistem maili tespit edildi, sipariş işlemi atlanıyor: "${subject}"`);
+        return null;
+      }
+
       let fullContent = `Konu: ${subject}\n\nİçerik:\n${content}`;
       let isExcel = false; // Flag to indicate if Excel data was processed
       let rawExcelData: ExcelRow[] | undefined; // To store parsed Excel data if any
