@@ -230,12 +230,13 @@ export async function parseOrderExcel(
     }
 
     // ── Dikişhane ─────────────────────────────────────────────────
-    if (!isEmpty(dikis)) {
+    // Kural: kumaş varsa dikişhane kesinlikle tetiklenir
+    if (!isEmpty(dikis) || !isEmpty(kumas)) {
       items.push(makeItem(
         orderId, itemIndex++, rowNum,
         urunAdi, kod, "Dikişhane", miktar, olcu,
-        `Шитьё: ${dikis}${ip ? ` | Нить: ${ip}` : ""}`,
-        kumas && !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
+        `Шитьё: ${dikis || kumas}${ip ? ` | Нить: ${ip}` : ""}`,
+        !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
         undefined,
         imgData?.buffer, imgData?.extension,
       ));
@@ -243,12 +244,13 @@ export async function parseOrderExcel(
     }
 
     // ── Döşemehane ────────────────────────────────────────────────
-    if (!isEmpty(doseme)) {
+    // Kural: kumaş varsa döşemehane kesinlikle tetiklenir
+    if (!isEmpty(doseme) || !isEmpty(kumas)) {
       items.push(makeItem(
         orderId, itemIndex++, rowNum,
         urunAdi, kod, "Döşemehane", miktar, olcu,
-        `Обивка: ${doseme}${kumas && !isEmpty(kumas) ? ` | Ткань: ${kumas}` : ""}`,
-        kumas && !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
+        `Обивка: ${doseme || kumas}${!isEmpty(kumas) ? ` | Ткань: ${kumas}` : ""}`,
+        !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
         undefined,
         imgData?.buffer, imgData?.extension,
       ));
