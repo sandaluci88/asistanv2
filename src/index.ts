@@ -400,14 +400,20 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
       console.log(
         `🕒 [FLOW] Final raporu için 10 saniye beklendi... (${draft.order.orderNumber})`,
       );
+      // Önce detaylı dökümü mesaj olarak gönder
+      const distSummary = buildDistributionSummary(draft.order);
+      await bot.api.sendMessage(marinaId,
+        `✅ <b>Распределение по отделам:</b>\n${distSummary}`,
+        { parse_mode: "HTML" }
+      );
       const summaryPdf = await orderService.generateMarinaSummaryPDF(
         draft.order,
       );
       await bot.api.sendDocument(
         marinaId,
-        new InputFile(summaryPdf, `Final_Rapor_${draft.order.orderNumber}.pdf`),
+        new InputFile(summaryPdf, `Otchet_${draft.order.orderNumber}.pdf`),
         {
-          caption: `✅ <b>Распределение заказа завершено</b>\n\n📌 № Заказа: ${draft.order.orderNumber}\n👤 Клиент: ${draft.order.customerName}\n\n${buildDistributionSummary(draft.order)}\n\n📄 <b>СВОДНЫЙ ОТЧЁТ ПО ЗАКАЗУ</b> (PDF)`,
+          caption: `📄 <b>СВОДНЫЙ ОТЧЁТ ПО ЗАКАЗУ</b>\n📌 № ${draft.order.orderNumber} | 👤 ${draft.order.customerName}`,
           parse_mode: "HTML",
         },
       );
@@ -928,10 +934,15 @@ if (process.env.GMAIL_ENABLED !== "false") {
                   }
                 } else {
                   // Manuel birim yoksa sadece özet gönder
-                  const finalMsg = `✅ <b>Распределение заказа завершено</b>\n\n${autoInfo}`;
+                  const shortCaption = `✅ <b>Распределение заказа завершено</b>\n📌 № ${order.orderNumber} | 👤 ${order.customerName}\n\n📄 <b>СВОДНЫЙ ОТЧЁТ ПО ЗАКАЗУ</b> (PDF)`;
                   console.log(
                     `🕒 [FLOW] Final özet için 40 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
                   );
+
+                  // Dökümü ayrı mesaj olarak gönder (caption sınırı aşılmasın)
+                  if (autoInfo) {
+                    await bot.api.sendMessage(marinaId, autoInfo, { parse_mode: "HTML" });
+                  }
 
                   try {
                     const summaryPdf =
@@ -940,28 +951,17 @@ if (process.env.GMAIL_ENABLED !== "false") {
                       marinaId,
                       new InputFile(
                         summaryPdf,
-                        `Siparis_Ozeti_${order.orderNumber}.pdf`,
+                        `Otchet_${order.orderNumber}.pdf`,
                       ),
                       {
-                        caption: `${finalMsg}\n\n📄 <b>СВОДНЫЙ ОТЧЁТ ПО ЗАКАЗУ</b> (PDF)`,
+                        caption: shortCaption,
                         parse_mode: "HTML",
                       },
                     );
                   } catch (sumErr) {
-                    if (pdfPreviewImg) {
-                      await bot.api.sendPhoto(
-                        marinaId,
-                        new InputFile(pdfPreviewImg, "preview.png"),
-                        {
-                          caption: finalMsg,
-                          parse_mode: "HTML",
-                        },
-                      );
-                    } else {
-                      await bot.api.sendMessage(marinaId, finalMsg, {
-                        parse_mode: "HTML",
-                      });
-                    }
+                    await bot.api.sendMessage(marinaId, shortCaption, {
+                      parse_mode: "HTML",
+                    });
                   }
                 }
               }, 40000);
