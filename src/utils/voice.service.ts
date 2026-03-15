@@ -23,6 +23,7 @@ export class VoiceService {
       this.openai = new OpenAI({
         apiKey: apiKey,
         baseURL: "https://openrouter.ai/api/v1",
+        timeout: 60000, // 60 saniye timeout (OpenRouter/Whisper bazen geç yanıt verebilir)
       });
     } else {
       logger.error("❌ OPENROUTER_API_KEY bulunamadı!");
