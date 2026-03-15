@@ -15,49 +15,17 @@ const logger = pino();
 
 // Re-export types from central schema for backward compatibility
 export type { OrderItem, OrderDetail } from "../models/order.schema";
-
 export class OrderService {
-  private readonly repository: OrderRepository;
-  private readonly pdfService: PDFService;
-  private readonly llmService: OpenRouterService;
-  private readonly staffService: StaffService;
-  private readonly imageEmbeddingService: ImageEmbeddingService;
-  private readonly supabase: SupabaseService;
+  private repository: OrderRepository;
+  private pdfService: PDFService;
+  private llmService: OpenRouterService;
+  private staffService: StaffService;
+  private imageEmbeddingService: ImageEmbeddingService;
+  private supabase: SupabaseService;
 
-  /**
-   * Levenshtein mesafesi hesaplayan metin benzerliği hesaplama
-   * 0.0 (tamamen farklı) ile 1.0 (tamamen aynı) arasında değer döndürür
-   */
-  private calculateSimilarity(str1: string, str2: string): number {
-    if (!str1 || !str2) return 0;
-    if (str1 === str2) return 1;
+  private static instance: OrderService;
 
-    const len1 = str1.length;
-    const len2 = str2.length;
-    const maxLen = Math.max(len1, len2);
-
-    if (maxLen === 0) return 1;
-
-    const matrix: number[][] = [];
-    for (let i = 0; i <= len1; i++) matrix[i] = [i];
-    for (let j = 0; j <= len2; j++) matrix[0][j] = j;
-
-    for (let i = 1; i <= len1; i++) {
-      for (let j = 1; j <= len2; j++) {
-        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost,
-        );
-      }
-    }
-
-    const distance = matrix[len1][len2];
-    return 1 - distance / maxLen;
-  }
-
-  constructor() {
+  private constructor() {
     this.repository = OrderRepository.getInstance();
     this.pdfService = PDFService.getInstance();
     this.llmService = new OpenRouterService();
@@ -65,6 +33,13 @@ export class OrderService {
     this.imageEmbeddingService = new ImageEmbeddingService();
     this.supabase = SupabaseService.getInstance();
     this.repository.loadOrders(); // Başlangıçta asenkron yükleme başlar
+  }
+
+  public static getInstance(): OrderService {
+    if (!OrderService.instance) {
+      OrderService.instance = new OrderService();
+    }
+    return OrderService.instance;
   }
 
   /** @deprecated Use repository.loadOrders() instead. Kept for backward compatibility. */
@@ -979,5 +954,43 @@ export class OrderService {
    */
   public async updateLastReminder(orderId: string, itemId: string) {
     await this.repository.updateLastReminder(itemId);
+  }
+
+  private calculateSimilarity(s1: string, s2: string): number {
+    let longer = s1;
+    let shorter = s2;
+    if (s1.length < s2.length) {
+      longer = s2;
+      shorter = s1;
+    }
+    const longerLength = longer.length;
+    if (longerLength === 0) {
+      return 1.0;
+    }
+    return (longerLength - this.editDistance(longer, shorter)) / longerLength;
+  }
+
+  private editDistance(s1: string, s2: string): number {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+
+    const costs = new Array();
+    for (let i = 0; i <= s1.length; i++) {
+      let lastValue = i;
+      for (let j = 0; j <= s2.length; j++) {
+        if (i == 0) costs[j] = j;
+        else {
+          if (j > 0) {
+            let newValue = costs[j - 1];
+            if (s1.charAt(i - 1) != s2.charAt(j - 1))
+              newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+            costs[j - 1] = lastValue;
+            lastValue = newValue;
+          }
+        }
+      }
+      if (i > 0) costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
   }
 }

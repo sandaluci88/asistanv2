@@ -47,9 +47,19 @@ export class OpenRouterService {
   private systemPrompt: string = "";
 
   constructor() {
+    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+    if (apiKey) {
+      logger.info(
+        { keyStart: apiKey.substring(0, 10) + "..." },
+        "🔑 OpenRouter API Key yüklendi.",
+      );
+    } else {
+      logger.error("❌ OPENROUTER_API_KEY bulunamadı!");
+    }
+
     this.client = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
-      apiKey: process.env.OPENROUTER_API_KEY,
+      apiKey: apiKey,
       defaultHeaders: {
         "HTTP-Referer": "https://sandaluci.com",
         "X-Title": "Sandaluci Ayça Asistan",
@@ -101,7 +111,7 @@ export class OpenRouterService {
           this.client.chat.completions.create(
             {
               model:
-                process.env.OPENROUTER_MODEL || "google/gemini-3-flash-preview",
+                (process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001").trim(),
               messages,
             },
             { timeout: 60000 },
