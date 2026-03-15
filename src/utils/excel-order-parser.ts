@@ -230,12 +230,12 @@ export async function parseOrderExcel(
     }
 
     // ── Dikişhane ─────────────────────────────────────────────────
-    // Kural: kumaş varsa dikişhane kesinlikle tetiklenir
-    if (!isEmpty(dikis) || !isEmpty(kumas)) {
+    // Kural: dikis sütunu doluysa veya kumaş + dikis birlikte varsa tetiklenir
+    if (!isEmpty(dikis)) {
       items.push(makeItem(
         orderId, itemIndex++, rowNum,
         urunAdi, kod, "Dikişhane", miktar, olcu,
-        `Шитьё: ${dikis || kumas}${ip ? ` | Нить: ${ip}` : ""}`,
+        `Шитьё: ${dikis}${ip ? ` | Нить: ${ip}` : ""}`,
         !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
         undefined,
         imgData?.buffer, imgData?.extension,
@@ -244,7 +244,7 @@ export async function parseOrderExcel(
     }
 
     // ── Döşemehane ────────────────────────────────────────────────
-    // Kural: kumaş varsa döşemehane kesinlikle tetiklenir
+    // Kural: kumaş varsa döşemehane KESİNLİKLE tetiklenir (doseme sütunu boş olsa bile)
     if (!isEmpty(doseme) || !isEmpty(kumas)) {
       items.push(makeItem(
         orderId, itemIndex++, rowNum,

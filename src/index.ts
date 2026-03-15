@@ -43,11 +43,11 @@ const isManualDept = (dept: string) => {
 };
 
 const getDeptButtonLabel = (dept: string, isAssigned: boolean = false) => {
-  const action = isAssigned ? "Değiştir" : "Seç";
-  if (dept.toLowerCase().includes("dikiş")) return `Dikişçi ${action}`;
-  if (dept.toLowerCase().includes("döşeme")) return `Döşemeci ${action}`;
-  if (dept.toLowerCase().includes("satınalma")) return `Satınalma ${action}`;
-  return `${dept} ${action}`;
+  const action = isAssigned ? "Изменить" : "Выбрать";
+  if (dept.toLowerCase().includes("dikiş")) return `🧵 Швея — ${action}`;
+  if (dept.toLowerCase().includes("döşeme")) return `🪑 Обивщик — ${action}`;
+  if (dept.toLowerCase().includes("satın")) return `🛒 Закупки — ${action}`;
+  return `${dept} — ${action}`;
 };
 
 // Çevresel değişkenleri yükle
@@ -210,7 +210,7 @@ bot.callbackQuery(/^select_dept_staff:(.+)\|(.+)$/, async (ctx) => {
   const staffList = staffService.getStaffByDepartment(deptName);
   if (staffList.length === 0) {
     return ctx.answerCallbackQuery(
-      `⚠️ ${deptName} için kayıtlı personel bulunamadı.`,
+      `⚠️ В отделе ${deptName} нет зарегистрированных сотрудников.`,
     );
   }
 
@@ -218,10 +218,10 @@ bot.callbackQuery(/^select_dept_staff:(.+)\|(.+)$/, async (ctx) => {
   staffList.forEach((s) => {
     keyboard.text(s.name, `aw:${draftId}:${deptName}:${s.name}`).row();
   });
-  keyboard.text("🔙 Geri", `back_to_draft:${draftId}`);
+  keyboard.text("🔙 Назад", `back_to_draft:${draftId}`);
 
   await ctx.editMessageText(
-    `👤 <b>${deptName}</b> için personel seçin:\n\n<i>Lütfen listeden bir isim seçin.</i>`,
+    `👤 <b>${deptName}</b> — выберите сотрудника:\n\n<i>Выберите имя из списка.</i>`,
     { parse_mode: "HTML", reply_markup: keyboard },
   );
   await ctx.answerCallbackQuery();
@@ -234,7 +234,7 @@ bot.callbackQuery(/^aw:(.+):(.+):(.+)$/, async (ctx) => {
 
   const draft = draftOrderService.getDraft(draftId);
   if (!draft)
-    return ctx.answerCallbackQuery("❌ Taslak bulunamadı veya süresi doldu.");
+    return ctx.answerCallbackQuery("❌ Черновик не найден или истёк.");
 
   // Taslaktaki o departmana ait TÜM kalemlere bu işçiyi ata
   draft.order.items.forEach((item: any) => {
@@ -245,7 +245,7 @@ bot.callbackQuery(/^aw:(.+):(.+):(.+)$/, async (ctx) => {
     }
   });
 
-  await ctx.answerCallbackQuery(`${staffName} atandı.`);
+  await ctx.answerCallbackQuery(`✅ ${staffName} назначен(а).`);
 
   // Marina'ya güncel durumu göster
   const visualReport = orderService.generateVisualTable(draft.order);
@@ -267,13 +267,13 @@ bot.callbackQuery(/^aw:(.+):(.+):(.+)$/, async (ctx) => {
 
   if (remainingDepts.length === 0) {
     keyboard
-      .text("🚀 ÜRETİMİ BAŞLAT (FINALIZE)", `finalize_dist:${draftId}`)
+      .text("🚀 ЗАПУСТИТЬ ПРОИЗВОДСТВО", `finalize_dist:${draftId}`)
       .row();
   }
-  keyboard.text("❌ İptal", `reject_order:${draftId}`);
+  keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
   await ctx.editMessageText(
-    `✅ ${deptName} -> <b>${staffName}</b> atandı.\n\n${visualReport}`,
+    `✅ ${deptName} → <b>${staffName}</b> назначен(а).\n\n${visualReport}`,
     {
       parse_mode: "HTML",
       reply_markup: keyboard,
@@ -284,7 +284,7 @@ bot.callbackQuery(/^aw:(.+):(.+):(.+)$/, async (ctx) => {
 bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
   const draftId = ctx.match[1] as string;
   const draft = draftOrderService.getDraft(draftId);
-  if (!draft) return ctx.answerCallbackQuery("❌ Taslak bulunamadı.");
+  if (!draft) return ctx.answerCallbackQuery("❌ Черновик не найден.");
 
   const unassignedManualDepts = Array.from(
     new Set(
@@ -296,11 +296,11 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
 
   if (unassignedManualDepts.length > 0) {
     return ctx.answerCallbackQuery(
-      `⚠️ Lütfen önce personelleri seçin: ${unassignedManualDepts.join(", ")}`,
+      `⚠️ Сначала назначьте сотрудников: ${unassignedManualDepts.join(", ")}`,
     );
   }
 
-  await ctx.answerCallbackQuery("🚀 Üretim başlatılıyor...");
+  await ctx.answerCallbackQuery("🚀 Производство запускается...");
 
   // 1. Manuel departmanlara (atanmış işçisi olanlar) PDF gönder
   const assignedDepts = Array.from(
@@ -395,7 +395,7 @@ bot.callbackQuery(/^auto_distribute:(.+)$/, async (ctx) => {
   // auto_distribute butonu finalize_dist ile aynı işi görsün
   const draftId = ctx.match[1] as string;
   const draft = draftOrderService.getDraft(draftId);
-  if (!draft) return ctx.answerCallbackQuery("❌ Taslak bulunamadı.");
+  if (!draft) return ctx.answerCallbackQuery("❌ Черновик не найден.");
 
   const hasManual = draft.order.items.some((i: any) =>
     isManualDept(i.department),
@@ -438,7 +438,7 @@ bot.callbackQuery(/^auto_distribute:(.+)$/, async (ctx) => {
 bot.callbackQuery(/^back_to_draft:(.+)$/, async (ctx) => {
   const draftId = ctx.match[1] as string;
   const draft = draftOrderService.getDraft(draftId);
-  if (!draft) return ctx.answerCallbackQuery("❌ Taslak bulunamadı.");
+  if (!draft) return ctx.answerCallbackQuery("❌ Черновик не найден.");
 
   const visualReport = orderService.generateVisualTable(draft.order);
   const keyboard = new InlineKeyboard();
@@ -465,12 +465,12 @@ bot.callbackQuery(/^back_to_draft:(.+)$/, async (ctx) => {
   );
   if (remaining.length === 0) {
     keyboard
-      .text("🚀 ÜRETİMİ BAŞLAT (FINALIZE)", `finalize_dist:${draftId}`)
+      .text("🚀 ЗАПУСТИТЬ ПРОИЗВОДСТВО", `finalize_dist:${draftId}`)
       .row();
   }
-  keyboard.text("❌ İptal", `reject_order:${draftId}`);
+  keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
-  await ctx.editMessageText(`📝 <b>Sipariş Taslağı</b>\n\n${visualReport}`, {
+  await ctx.editMessageText(`📝 <b>Черновик заказа</b>\n\n${visualReport}`, {
     parse_mode: "HTML",
     reply_markup: keyboard,
   });
@@ -479,7 +479,7 @@ bot.callbackQuery(/^back_to_draft:(.+)$/, async (ctx) => {
 bot.callbackQuery(/^reject_order:(.+)$/, async (ctx) => {
   const draftId = ctx.match[1] as string;
   draftOrderService.removeDraft(draftId);
-  await ctx.editMessageText("❌ Sipariş taslağı iptal edildi.");
+  await ctx.editMessageText("❌ Черновик заказа отменён.");
   await ctx.answerCallbackQuery();
 });
 
@@ -873,11 +873,11 @@ if (process.env.GMAIL_ENABLED !== "false") {
                   });
 
                   keyboard
-                    .text("🚀 DAĞITIMI BAŞLAT", `auto_distribute:${draftId}`)
+                    .text("🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ", `auto_distribute:${draftId}`)
                     .row();
-                  keyboard.text("❌ İptal Et", `reject_order:${draftId}`);
+                  keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
-                  const reportCaption = `📝 <b>Sipariş Raporu</b>\n\n${visualReport}${autoInfo}\n\n<b>Personel ataması bekleniyor:</b>`;
+                  const reportCaption = `📝 <b>Отчёт по заказу</b>\n\n${visualReport}${autoInfo}\n\n<b>Ожидается назначение сотрудников:</b>`;
                   console.log(
                     `🕒 [FLOW] Marina seçimi için 40 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
                   );
@@ -1004,9 +1004,9 @@ if (process.env.GMAIL_ENABLED !== "false") {
             });
 
             keyboard
-              .text("🚀 DAĞITIMI BAŞLAT", `auto_distribute:${draftId}`)
+              .text("🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ", `auto_distribute:${draftId}`)
               .row();
-            keyboard.text("❌ İptal Et", `reject_order:${draftId}`);
+            keyboard.text("❌ Отменить", `reject_order:${draftId}`);
             const autoDepts = Array.from(
               new Set(order.items.map((i: any) => i.department)),
             ).filter((d: any) => !isManualDept(d)) as string[];
