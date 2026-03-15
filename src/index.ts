@@ -318,7 +318,23 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
     new Set(draft.order.items.map((i: any) => i.department as string)),
   ) as string[]).filter((d) => !isManualDept(d));
 
-  const allDeptsToSend = [...new Set([...onlyManual, ...autoDepts])];
+  // Üretim akış sırası: Satınalma → Karkas → Boyahane → Kumaş → Dikişhane → Döşemehane
+  const DEPT_FLOW_ORDER = [
+    "Satınalma",
+    "Karkas Üretimi",
+    "Metal Üretimi",
+    "Boyahane",
+    "Kumaş",
+    "Dikişhane",
+    "Döşemehane",
+  ];
+  const allDeptsToSend = [...new Set([...onlyManual, ...autoDepts])].sort(
+    (a, b) => {
+      const ai = DEPT_FLOW_ORDER.findIndex((d) => a.includes(d) || d.includes(a));
+      const bi = DEPT_FLOW_ORDER.findIndex((d) => b.includes(d) || d.includes(b));
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    },
+  );
 
   let report = { success: [] as string[], failed: [] as string[] };
   if (allDeptsToSend.length > 0) {
@@ -498,9 +514,9 @@ async function processOrderDistribution(
   const report = { success: [] as string[], failed: [] as string[] };
 
   for (const currentDept of targetDepts) {
-    const deptItems = order.items.filter(
-      (i: any) => i.department === currentDept,
-    );
+    const deptItems = order.items
+      .filter((i: any) => i.department === currentDept)
+      .sort((a: any, b: any) => (a.rowIndex ?? 0) - (b.rowIndex ?? 0));
     if (deptItems.length === 0) continue;
 
     const deptMsg = orderService.generateDeptView(

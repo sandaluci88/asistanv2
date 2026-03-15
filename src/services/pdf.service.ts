@@ -28,20 +28,12 @@ export class PDFService {
   private readonly boldFont: string;
 
   constructor() {
-    this.fontRegular = path.join(
-      process.cwd(),
-      "src",
-      "assets",
-      "fonts",
-      "Roboto-Regular.ttf",
-    );
-    this.fontBold = path.join(
-      process.cwd(),
-      "src",
-      "assets",
-      "fonts",
-      "Roboto-Bold.ttf",
-    );
+    // __dirname = dist/services/ → ../../src/assets/fonts (dev) veya ../assets/fonts (prod)
+    const distFonts = path.join(__dirname, "..", "assets", "fonts");
+    const srcFonts = path.join(process.cwd(), "src", "assets", "fonts");
+    const fontsDir = fs.existsSync(distFonts) ? distFonts : srcFonts;
+    this.fontRegular = path.join(fontsDir, "Roboto-Regular.ttf");
+    this.fontBold = path.join(fontsDir, "Roboto-Bold.ttf");
     this.defaultFont = fs.existsSync(this.fontRegular)
       ? this.fontRegular
       : "Helvetica";

@@ -32,6 +32,7 @@ COPY package*.json ./
 RUN npm install --omit=dev && chown -R node:node /app
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/assets ./dist/assets
 COPY --from=builder /app/docs ./docs
 
 # Ensure data directory exists and set permissions
