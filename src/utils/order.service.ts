@@ -10,6 +10,7 @@ import { pino } from "pino";
 import { OrderRepository } from "../repositories/order.repository";
 import { PDFService } from "../services/pdf.service";
 import { OrderDetail, OrderItem } from "../models/order.schema";
+import { parseOrderExcel } from "./excel-order-parser";
 
 const logger = pino();
 
@@ -87,48 +88,62 @@ export class OrderService {
       }
 
       let fullContent = `Konu: ${subject}\n\nİçerik:\n${content}`;
-      let isExcel = false; // Flag to indicate if Excel data was processed
-      let rawExcelData: ExcelRow[] | undefined; // To store parsed Excel data if any
+      let isExcel = false;
+      let rawExcelData: ExcelRow[] | undefined;
 
-      // Excel eklerini işle - XlsxUtils kullan (resimleri de alır)
+      // ── EXCEL EKİ: Sabit parser ile işle (LLM gerekmez) ──────────
       if (attachments && attachments.length > 0) {
         for (const attachment of attachments) {
-          if (
+          const isXlsx =
             attachment.contentType ===
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-            attachment.filename?.endsWith(".xlsx")
-          ) {
-            try {
-              // XlsxUtils kullan - resimleri de içerir
-              rawExcelData = await XlsxUtils.parseExcel(
-                attachment.content,
-              );
-              if (!rawExcelData || rawExcelData.length === 0) {
-                console.warn(
-                  `⚠️ [DEBUG] Excel dosyası boş veya okunamadı: ${attachment.filename}`,
-                );
-                continue;
-              }
+            attachment.filename?.endsWith(".xlsx") ||
+            attachment.filename?.endsWith(".xls");
 
-              // Tablo formatında içerik oluştur (LLM için)
-              const tableContent = XlsxUtils.formatToTable(rawExcelData);
-              fullContent += `\n\n--- EK DOSYA İÇERİĞİ (${attachment.filename}) ---\n${tableContent}`;
-              isExcel = true;
+          if (!isXlsx) continue;
 
-              // rawExcelData'yı kaydediyoruz (daha sonra resim eşleştirme için)
-              // parseAndCreateOrder içinde yerel bir değişken olarak tanımlanmalı veya pass edilmeli
-              // Ama burada döngü içindeyiz. Tipik olarak tek bir sipariş dosyası beklenir.
-              (this as any)._latestExcelData = rawExcelData;
+          try {
+            logger.info(`📊 Sabit Excel parser başlatılıyor: ${attachment.filename}`);
+            const parsed = await parseOrderExcel(attachment.content);
 
-              console.log(
-                `📊 [DEBUG] Excel eki XlsxUtils ile okundu: ${attachment.filename}, ${rawExcelData.length} satır`,
-              );
-            } catch (err) {
-              console.error(
-                `❌ [DEBUG] Excel okuma hatası (${attachment.filename}):`,
-                err,
-              );
+            if (!parsed) {
+              logger.warn(`⚠️ Sabit parser sonuç döndürmedi: ${attachment.filename}`);
+              continue;
             }
+
+            const { order: excelOrder } = parsed;
+
+            // Mükerrer kontrolü
+            const allOrders = this.repository.getAll();
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const recentOrders = allOrders.filter((o: OrderDetail) => o.createdAt > oneDayAgo);
+
+            for (const existing of recentOrders) {
+              if (
+                excelOrder.orderNumber &&
+                existing.orderNumber === excelOrder.orderNumber
+              ) {
+                logger.warn(`⚠️ Mükerrer sipariş (no eşleşti): ${excelOrder.orderNumber}`);
+                return { ...existing, isDuplicate: true };
+              }
+            }
+
+            excelOrder.createdAt = new Date().toISOString();
+            excelOrder.updatedAt = new Date().toISOString();
+
+            await this.repository.save(excelOrder);
+
+            try { await this.saveToVisualMemory(excelOrder); } catch (_) {}
+            await this.logOrder(excelOrder);
+
+            logger.info(
+              { orderNumber: excelOrder.orderNumber, items: excelOrder.items.length },
+              "✅ Sabit Excel parser ile sipariş oluşturuldu",
+            );
+            return excelOrder;
+
+          } catch (err) {
+            logger.error({ err }, `❌ Sabit Excel parser hatası: ${attachment.filename}`);
           }
         }
       }
