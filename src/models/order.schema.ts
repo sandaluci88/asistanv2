@@ -26,6 +26,10 @@ export const FabricDetailsSchema = z.object({
   issueNote: z.string().optional(),
 });
 
+export const PaintDetailsSchema = z.object({
+  name: z.string(),
+});
+
 export const OrderItemSchema = z.object({
   id: z.string().min(1),
   product: z.string().min(1),
@@ -41,6 +45,7 @@ export const OrderItemSchema = z.object({
   assignedWorker: z.string().optional(),
   distributedAt: z.string().datetime({ offset: true }).optional(),
   fabricDetails: FabricDetailsSchema.optional(),
+  paintDetails: PaintDetailsSchema.optional(),
   lastReminderAt: z.string().datetime({ offset: true }).optional(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
@@ -72,6 +77,7 @@ export const OrderDetailSchema = z.object({
 export type OrderItemStatus = z.infer<typeof OrderItemStatusSchema>;
 export type OrderItemSource = z.infer<typeof OrderItemSourceSchema>;
 export type FabricDetails = z.infer<typeof FabricDetailsSchema>;
+export type PaintDetails = z.infer<typeof PaintDetailsSchema>;
 export type OrderItem = z.infer<typeof OrderItemSchema>;
 
 export type OrderDetailStatus = z.infer<typeof OrderDetailStatusSchema>;

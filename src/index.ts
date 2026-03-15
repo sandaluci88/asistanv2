@@ -314,9 +314,9 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
   const onlyManual = assignedDepts.filter((d) => isManualDept(d));
 
   // FIX: Auto departmanları da gönder (Karkas, Boyahane vb. atlanmasın)
-  const autoDepts = Array.from(
+  const autoDepts = (Array.from(
     new Set(draft.order.items.map((i: any) => i.department as string)),
-  ).filter((d: string) => !isManualDept(d)) as string[];
+  ) as string[]).filter((d) => !isManualDept(d));
 
   const allDeptsToSend = [...new Set([...onlyManual, ...autoDepts])];
 
@@ -386,9 +386,9 @@ bot.callbackQuery(/^auto_distribute:(.+)$/, async (ctx) => {
   );
   if (!hasManual) {
     // Manuel dept yok — tüm auto deptlere gönder
-    const autoDepts = Array.from(
+    const autoDepts = (Array.from(
       new Set(draft.order.items.map((i: any) => i.department as string)),
-    ).filter((d: string) => !isManualDept(d)) as string[];
+    ) as string[]).filter((d) => !isManualDept(d));
 
     if (autoDepts.length > 0) {
       await processOrderDistribution(
