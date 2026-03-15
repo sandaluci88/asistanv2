@@ -769,6 +769,7 @@ if (process.env.GMAIL_ENABLED !== "false") {
                   { orderNumber: (order as any).orderNumber },
                   "⏭️ Mükerrer sipariş atlanıyor.",
                 );
+                excelProcessed = true; // TEXT fallback'ın çalışmasını engelle
                 continue;
               }
 
