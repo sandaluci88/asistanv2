@@ -4,6 +4,7 @@ import { CalendarService } from "../utils/calendar.service";
 import { StaffService } from "../utils/staff.service";
 import { OrderService } from "../utils/order.service";
 import { t, getUserLanguage, Language } from "../utils/i18n";
+import { SelfCleanupService } from "../utils/self-cleanup.service";
 
 export class CommandHandler {
   private productionService: ProductionService;
@@ -223,8 +224,6 @@ export class CommandHandler {
       parse_mode: "Markdown",
     });
 
-    // Developer logic will be handled here via LLM
-    // For now, we will use a specialized prompt in LLM Service
     const { OpenRouterService } = require("../utils/llm.service");
     const llm = new OpenRouterService();
 
@@ -235,12 +234,6 @@ export class CommandHandler {
     - src/utils: Servisler (Supabase, Order, Production, Staff vb.)
     - docs/: Soul ve diğer dokümanlar
     - data/: JSON veritabanı (staff.json vb.)
-
-    Agent Geliştirme Standartları (agent-development.md):
-    - Agentlar markdown dosyası olarak tanımlanır.
-    - YAML frontmatter (name, description, model, color, tools) içermelidir.
-    - Description alanı tetikleme (trigger) koşullarını ve <example> bloklarını içermelidir.
-    - Sistem promptu (body) ikinci şahıs ("Sen...") dilinde yazılmalıdır.
     
     Kullanıcının (Barış Bey) teknik sorusunu, geliştirme talebini veya yeni agent yaratma/onarma isteğini yanıtla. Agent yaratırken tam markdown yapısını sağla. Kod örnekleri ver.`;
 
@@ -331,5 +324,32 @@ export class CommandHandler {
       parse_mode: "Markdown",
       reply_markup: keyboard,
     });
+  }
+
+  public async handleTemizlik(ctx: Context) {
+    if (!this.isBoss(ctx)) {
+      await ctx.reply("🔒 Temizlik yetkisi sadece Barış Bey'e (SuperAdmin) aittir.");
+      return;
+    }
+
+    const statusMsg = await ctx.reply("🧹 *Sistem temizliği başlatılıyor...* Lütfen bekleyin.", { parse_mode: "Markdown" });
+    
+    const result = await SelfCleanupService.performCleanup();
+    
+    if (result.success) {
+      let report = "✨ *Temizlik Başarıyla Tamamlandı!*\n\n";
+      if (result.deletedItems.length > 0) {
+        report += "🗑️ *Silinen/Sıfırlanan Öğeler:*\n";
+        result.deletedItems.forEach(item => {
+          report += `- ${item}\n`;
+        });
+      } else {
+        report += "Sistem zaten temizdi, temizlenecek bir şey bulunamadı.";
+      }
+      
+      await ctx.api.editMessageText(ctx.chat!.id, statusMsg.message_id, report, { parse_mode: "Markdown" });
+    } else {
+      await ctx.api.editMessageText(ctx.chat!.id, statusMsg.message_id, "❌ Temizlik sırasında bazı hatalar oluştu. Logları kontrol ediniz.");
+    }
   }
 }

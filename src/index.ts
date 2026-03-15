@@ -177,6 +177,7 @@ bot.command("sil", (ctx) => commandHandler.handleRemoveStaff(ctx));
 bot.command("dev", (ctx) => commandHandler.handleDev(ctx));
 bot.command("test_briefing", (ctx) => commandHandler.handleTestBriefing(ctx));
 bot.command("takip", (ctx) => commandHandler.handleTakip(ctx));
+bot.command("temizlik", (ctx) => commandHandler.handleTemizlik(ctx));
 bot.command("doctor", async (ctx) => {
   if ((ctx as any).role !== "boss") {
     return ctx.reply(

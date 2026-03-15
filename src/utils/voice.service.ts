@@ -2,25 +2,30 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { Context } from "grammy";
-import Groq from "groq-sdk";
+import OpenAI from "openai";
 import * as dotenv from "dotenv";
 import { logger } from "./logger";
 
 dotenv.config();
 
 export class VoiceService {
-  private groq: Groq | null = null;
+  private openai: OpenAI | null = null;
+  private readonly MODEL = "openai/whisper-large-v3"; // OpenRouter üzerindeki kararlı Whisper modeli
 
   constructor() {
-    // dotenv.config() zaten index.ts'de çağrılıyor ama garantiye alalım
-    require('dotenv').config();
-    const groqKey = process.env.GROQ_API_KEY?.trim();
+    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
     
-    if (groqKey) {
-      logger.info({ keyStart: groqKey.substring(0, 8) + "..." }, "🔑 Groq API Key yüklendi.");
-      this.groq = new Groq({ apiKey: groqKey });
+    if (apiKey) {
+      logger.info(
+        { keyStart: apiKey.substring(0, 8) + "..." }, 
+        "🔑 OpenRouter API (Voice) yüklendi."
+      );
+      this.openai = new OpenAI({
+        apiKey: apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+      });
     } else {
-      logger.error("❌ GROQ_API_KEY bulunamadı!");
+      logger.error("❌ OPENROUTER_API_KEY bulunamadı!");
     }
   }
 
@@ -29,14 +34,14 @@ export class VoiceService {
     fileId: string,
     lang: string = "auto",
   ): Promise<string | null> {
-    if (!this.groq) {
-      logger.error("❌ GROQ_API_KEY eksik! Sesli mesaj işlenemez.");
+    if (!this.openai) {
+      logger.error("❌ OpenRouter API eksik! Sesli mesaj işlenemez.");
       return null;
     }
 
     let tempFilePath: string | null = null;
     try {
-      logger.info({ fileId }, "🎙️ Sesli mesaj indirme başladı (Grammy Native)...");
+      logger.info({ fileId }, "🎙️ Sesli mesaj indirme başladı...");
       
       const file = await ctx.api.getFile(fileId);
       if (!file.file_path) throw new Error("Telegram dosya yolu bulunamadı");
@@ -45,7 +50,7 @@ export class VoiceService {
       const tempFileName = `voice_${Date.now()}_${fileId}.ogg`;
       tempFilePath = path.join(os.tmpdir(), tempFileName);
 
-      // Telegram'dan dosyayı indir (Native HTTPS)
+      // Telegram'dan dosyayı indir
       const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
       
       const downloadFile = (url: string, dest: string) => {
@@ -72,18 +77,18 @@ export class VoiceService {
       await downloadFile(fileUrl, tempFilePath);
       
       const buffer = fs.readFileSync(tempFilePath);
-      logger.info({ tempFilePath, size: buffer.length }, "📁 Geçici ses dosyası hazır. Whisper'a gönderiliyor...");
+      logger.info({ tempFilePath, size: buffer.length }, "📁 Ses dosyası hazır. OpenRouter Whisper'a gönderiliyor...");
 
-      // Groq SDK kullanarak Whisper V3 ile çeviri
-      const transcription = await this.groq.audio.transcriptions.create({
+      // OpenRouter üzerinden Whisper ile çeviri
+      const transcription = await this.openai.audio.transcriptions.create({
         file: fs.createReadStream(tempFilePath),
-        model: "whisper-large-v3",
+        model: this.MODEL,
         language: lang === "auto" ? undefined : lang,
         response_format: "json",
       });
 
       if (transcription.text) {
-        logger.info({ text: transcription.text.substring(0, 50) + "..." }, "✅ Transcription başarılı.");
+        logger.info({ text: transcription.text.substring(0, 50) + "..." }, "✅ Transcription başarılı (OpenRouter).");
         return transcription.text;
       }
 
@@ -95,7 +100,7 @@ export class VoiceService {
         error: errorMessage,
         status: error.status,
         fileId 
-      }, "❌ Sesli mesaj çeviri hatası (Groq/Whisper)");
+      }, "❌ Sesli mesaj çeviri hatası (OpenRouter)");
       return null;
     } finally {
       // Temizlik
