@@ -314,8 +314,9 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
   // Sadece Manuel olanları filtreleyelim
   const onlyManual = assignedDepts.filter((d) => isManualDept(d));
 
+  let report = { success: [] as string[], failed: [] as string[] };
   if (onlyManual.length > 0) {
-    await processOrderDistribution(
+    report = await processOrderDistribution(
       draft.order,
       draft.images || [],
       draft.excelRows || [],
@@ -325,11 +326,29 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
     );
   }
 
-  // 2. Marina'ya final raporunu 20 saniye sonra gönder
+  // Marina'ya durumu bildir
+  const visualReport = orderService.generateVisualTable(draft.order);
+  let statusMsg = "🚀 <b>Üretim Süreci Dağıtım Raporu</b>\n\n";
+  
+  if (report.success.length > 0) {
+    statusMsg += `✅ <b>Gönderilenler:</b> ${report.success.map(d => translateDepartment(d, "tr")).join(", ")}\n`;
+  }
+  if (report.failed.length > 0) {
+    statusMsg += `❌ <b>BAŞARISIZ:</b> ${report.failed.map(d => translateDepartment(d, "tr")).join(", ")}\n`;
+  }
+  if (report.success.length === 0 && report.failed.length === 0) {
+    statusMsg += "ℹ️ Ek manuel dağıtım yapılmadı.\n";
+  }
+
+  statusMsg += `\n${visualReport}`;
+
+  await ctx.editMessageText(statusMsg, { parse_mode: "HTML" });
+
+  // 2. Marina'ya final raporunu 10 saniye sonra gönder
   setTimeout(async () => {
     try {
       console.log(
-        `🕒 [FLOW] Final raporu için 20 saniye beklendi, şimdi gönderiliyor... (${draft.order.orderNumber})`,
+        `🕒 [FLOW] Final raporu için 10 saniye beklendi... (${draft.order.orderNumber})`,
       );
       const summaryPdf = await orderService.generateMarinaSummaryPDF(
         draft.order,
@@ -345,11 +364,8 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
     } catch (finalErr) {
       console.error("❌ Final rapor gönderme hatası:", finalErr);
     }
-  }, 20000);
+  }, 10000);
 
-  await ctx.editMessageText(
-    `✅ Üretim süreci başlatıldı ve PDF'ler ilgili birimlere iletildi.`,
-  );
   draftOrderService.removeDraft(draftId);
 });
 
@@ -458,7 +474,9 @@ async function processOrderDistribution(
   manualAssignments: Record<string, number> | undefined,
   targetDepts: string[],
   isDraft: boolean = false,
-) {
+): Promise<{ success: string[]; failed: string[] }> {
+  const report = { success: [] as string[], failed: [] as string[] };
+
   for (const currentDept of targetDepts) {
     const deptItems = order.items.filter(
       (i: any) => i.department === currentDept,
@@ -478,8 +496,7 @@ async function processOrderDistribution(
         currentDept,
       );
       await orderService.archivePDF(currentDept, pdfBuffer);
-      const pdfViewBuffer = await orderService.generatePDFView(pdfBuffer);
-
+      
       const safeCustomerName = (order.customerName || "Bilinmiyor")
         .replace(/[^a-zA-Z0-9]/g, "_")
         .substring(0, 30);
@@ -523,6 +540,7 @@ async function processOrderDistribution(
         }
       }
 
+      let sentCount = 0;
       for (const targetId of targetIds) {
         if (!targetId) continue;
 
@@ -533,8 +551,6 @@ async function processOrderDistribution(
             ? "ru"
             : staff?.language || "ru";
 
-        // Sadece PDF dokümanını gönder (görsel önizlemeye ve detaylı metne gerek yok)
-
         try {
           await bot.api.sendDocument(
             targetId,
@@ -544,15 +560,13 @@ async function processOrderDistribution(
               parse_mode: "HTML",
             },
           );
+          sentCount++;
         } catch (pdfSendErr) {
           logger.error(
-            { err: pdfSendErr, dept: currentDept },
+            { err: pdfSendErr, dept: currentDept, targetId },
             "❌ PDF dosyası gönderilemedi.",
           );
         }
-
-        // ESKİ MANUEL ATAMA LANTIĞI (DRAFT FLOW İLE DEĞİŞTİ - İHTİYAÇ KALMADI)
-        // Sadece Kumaş ve Statü güncelleme kısımları kalsın
 
         if (staff) {
           for (const dItem of deptItems) {
@@ -562,10 +576,18 @@ async function processOrderDistribution(
           }
         }
       }
+
+      if (sentCount > 0) {
+        report.success.push(currentDept);
+      } else {
+        report.failed.push(currentDept);
+      }
     } catch (distError) {
       logger.error({ err: distError, dept: currentDept }, "Dağıtım hatası");
+      report.failed.push(currentDept);
     }
   }
+  return report;
 }
 
 /**

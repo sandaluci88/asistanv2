@@ -101,21 +101,6 @@ export class StaffService {
         s.department.toLowerCase().includes(department.toLowerCase()) ||
         department.toLowerCase().includes(s.department.toLowerCase()),
     );
-
-    // TEST MODU İÇİN: Eğer bu departmanda hiç personel kayıtlı değilse,
-    // test işlemlerini yürütebilmeniz için sizin Telegram ID'nizi geçici olarak atıyoruz.
-    if (staff.length === 0 && process.env.TELEGRAM_CHAT_ID) {
-      return [
-        {
-          telegramId: Number(process.env.TELEGRAM_CHAT_ID),
-          name: `Test Ustası (${department})`,
-          department: department,
-          role: "Personnel",
-          language: "tr",
-        },
-      ];
-    }
-
     return staff;
   }
 
@@ -124,7 +109,7 @@ export class StaffService {
       (s) => s.name.toLowerCase() === name.toLowerCase(),
     );
 
-    // Sanal test personeli aranıyorsa doğrudan sanal bir obje döndür
+    // Sanal test personeli aranıyorsa doğrudan sanal bir obje döndür (Sadece Geliştirici Modu için)
     if (
       !staff &&
       name.startsWith("Test Ustası") &&

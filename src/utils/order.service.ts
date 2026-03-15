@@ -339,50 +339,61 @@ export class OrderService {
         console.log(`🔍 [STRIP] Orijinal Ürün: "${cleanProduct}"`);
 
         // Daha agresif temizlik: [RU] kısmını bul ve sonrasını al, veya / işaretinden sonrasını al
-        const ruMatch = cleanProduct.match(/\[RU\]\s*(.*)/i);
-        const trRuMatch = cleanProduct.match(/\[TR\].*?\/.*?\[RU\]\s*(.*)/i);
+        // Dil etiketlerini ve ayraçları temizle
+        // [TR] ... / [RU] ... formatından sadece RU kısmını al
+        const trRuPatterns = [
+          /\[TR\].*?\/.*?\[RU\]\s*(.*)/i,
+          /\[TR\].*?\|.*?\[RU\]\s*(.*)/i,
+          /\[RU\]\s*(.*)/i,
+          /^.*?\/.*?\[RU\]\s*(.*)/i
+        ];
 
-        if (trRuMatch) {
-          cleanProduct = trRuMatch[1].trim();
-        } else if (ruMatch) {
-          cleanProduct = ruMatch[1].trim();
-        } else if (cleanProduct.includes("/")) {
+        let foundRu = false;
+        for (const pattern of trRuPatterns) {
+          const match = cleanProduct.match(pattern);
+          if (match) {
+            cleanProduct = match[1].trim();
+            foundRu = true;
+            break;
+          }
+        }
+
+        if (!foundRu && cleanProduct.includes("/")) {
           const parts = cleanProduct.split("/");
           cleanProduct = parts[parts.length - 1].trim();
         }
 
         // Details için aynısı
-        const ruMatchDetails = cleanDetails.match(/\[RU\]\s*(.*)/i);
-        const trRuMatchDetails = cleanDetails.match(
-          /\[TR\].*?\/.*?\[RU\]\s*(.*)/i,
-        );
+        let foundRuDetails = false;
+        for (const pattern of trRuPatterns) {
+          const match = cleanDetails.match(pattern);
+          if (match) {
+            cleanDetails = match[1].trim();
+            foundRuDetails = true;
+            break;
+          }
+        }
 
-        if (trRuMatchDetails) {
-          cleanDetails = trRuMatchDetails[1].trim();
-        } else if (ruMatchDetails) {
-          cleanDetails = ruMatchDetails[1].trim();
-        } else if (cleanDetails.includes("/")) {
+        if (!foundRuDetails && cleanDetails.includes("/")) {
           const parts = cleanDetails.split("/");
           cleanDetails = parts[parts.length - 1].trim();
         }
 
-        // [TR] veya [RU] tagleri kalmışsa temizle
-        cleanProduct = cleanProduct
-          .replace(/\[TR\]/gi, "")
-          .replace(/\[RU\]/gi, "")
-          .trim();
-        cleanDetails = cleanDetails
-          .replace(/\[TR\]/gi, "")
-          .replace(/\[RU\]/gi, "")
-          .trim();
+        // Kalan tagleri temizle (Regex ile)
+        cleanProduct = cleanProduct.replace(/\[TR\]|\[RU\]/gi, "").trim();
+        cleanDetails = cleanDetails.replace(/\[TR\]|\[RU\]/gi, "").trim();
 
         console.log(`✅ [STRIP] Temiz Ürün: "${cleanProduct}"`);
 
-        // Plastik kuralı kontrolü
+        // 🚨 PLASTİK KURALI (Türkçe, Rusça ve İngilizce)
+        // Sandalye, ayak veya genel parça plastik ise Satınalma'ya (Marina) gider.
         let finalDept = item.department;
-        const isPlastik =
-          item.product?.toLowerCase().includes("plastik") ||
-          item.details?.toLowerCase().includes("plastik");
+        const lowerProd = (item.product || "").toLowerCase();
+        const lowerDetails = (item.details || "").toLowerCase();
+        
+        const isPlastik = 
+          lowerProd.includes("plastik") || lowerProd.includes("пластик") || lowerProd.includes("plastic") ||
+          lowerDetails.includes("plastik") || lowerDetails.includes("пластик") || lowerDetails.includes("plastic");
 
         if (isPlastik) {
           console.log(
@@ -448,11 +459,12 @@ export class OrderService {
             const productLower = item.product.toLowerCase();
             const detailsLower = (item.details || "").toLowerCase();
 
-            // Plastik ürünler için özel kontrol
-            if (
-              productLower.includes("plastik") ||
-              detailsLower.includes("plastik")
-            ) {
+            // Plastik ürünler için özel kontrol (TR, RU ve EN)
+            const isImgPlastik = 
+              productLower.includes("plastik") || productLower.includes("пластик") || productLower.includes("plastic") ||
+              detailsLower.includes("plastik") || detailsLower.includes("пластик") || detailsLower.includes("plastic");
+
+            if (isImgPlastik) {
               console.log(
                 `🔍 [IMG] Plastik ürün için görsel eşleştirme deneniyor: ${item.product}`,
               );

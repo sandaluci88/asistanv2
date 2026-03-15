@@ -532,7 +532,7 @@ export class PDFService {
             doc.text(`${index + 1}. ${item.product}`, 180, currentY + 20);
 
             doc.font(this.boldFont).fontSize(10);
-            doc.text(`${t("order_label", "ru")}:`, 180, currentY + 45, {
+            doc.text(`${t("pdf_table_quantity", "ru")}:`, 180, currentY + 45, {
               continued: true,
             });
             doc.font(this.defaultFont).text(` ${item.quantity}`);
