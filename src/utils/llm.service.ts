@@ -111,7 +111,7 @@ export class OpenRouterService {
           this.client.chat.completions.create(
             {
               model:
-                (process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001").trim(),
+                (process.env.OPENROUTER_MODEL || "google/gemini-3-flash-preview").trim(),
               messages,
             },
             { timeout: 60000 },

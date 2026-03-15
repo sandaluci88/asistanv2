@@ -37,7 +37,7 @@ Bu bölüm, projenin başından sonuna kadar geçirdiği evreleri ve teknik baş
 - **Aşama 20: Akıllı Sesli Komut & Whisper V3 (Mart 2026):** Telegram sesli mesajları için `VoiceService` tamamen yenilendi. **Whisper-large-v3** altyapısı ile otomatik dil algılama (Auto-Detect) yeteneği eklendi. `Node-fetch` kaynaklı CommonJS/ESM çakışmaları giderilerek native HTTPS indirme motoru devreye alındı.
 - **Aşama 21: IMAP Stabilizasyonu & State Management (Mart 2026):** Gmail IMAP bağlantılarında yaşanan `ready state` ve `authenticated` çakışmaları için proaktif state-check mekanizması (`connectWithRetry`) geliştirildi. Sistem artık bağlantı hatalarında kilitlenmeden e-posta takibine devam ediyor.
 - **Aşama 22: Dosya Sistemi Güvenliği & Bellek Yönetimi (Mart 2026):** `MemoryService` üzerinde yaşanan `ENOENT` (dizin bulunamadı) hataları için proaktif dizin oluşturma (`ensureDirs`) mekanizması eklendi. Uygulama URL'si `https://sanasistanv2.turklawai.com` olarak güncellendi ve sistem daha izole/güvenli bir yapıya kavuşturuldu.
-- **Aşama 23: LLM Kimlik Doğrulama & Model Optimizasyonu (Mart 2026):** OpenRouter üzerindeki "401 User not found" hatası giderildi. `OPENROUTER_MODEL` geçerli bir modele (`gemini-2.0-flash-001`) güncellendi ve API anahtarındaki tırnak işaretleri temizlendi. `OrderService` üzerindeki singleton mimarisi ve kayıp metodlar (`calculateSimilarity`) geri kazandırıldı.
+- **Aşama 23: LLM Kimlik Doğrulama & Model Optimizasyonu (Mart 2026):** OpenRouter üzerindeki "401 User not found" hatası giderildi. `OPENROUTER_MODEL` geçerli bir modele (`google/gemini-3-flash-preview`) güncellendi ve API anahtarındaki tırnak işaretleri temizlendi. `OrderService` üzerindeki singleton mimarisi ve kayıp metodlar (`calculateSimilarity`) geri kazandırıldı.
 
 
 ### 3. Bot Stabilitesi & Webhook Mimarisi (Mart 2026)
@@ -84,7 +84,7 @@ Bu bölüm, projenin başından sonuna kadar geçirdiği evreleri ve teknik baş
 
 ## 🛠️ Teknik Altyapı
 
-- **Model:** OpenRouter üzerinden `google/gemini-2.0-flash-001` (Yüksek hızlı ve zeki JSON analizi).
+- **Model:** OpenRouter üzerinden `google/gemini-3-flash-preview` (Yüksek hızlı ve zeki JSON analizi).
 - **Veritabanı:** Supabase (SQL & pgvector).
 - **Excel Analizi:** `xlsx` ve `exceljs` kütüphaneleri ile derinlemesine dosya ve resim ayrıştırma.
 - **Arşivleme:** İşlenen sipariş formları `data/orders` altında, görseller ise `data/images` altında.
