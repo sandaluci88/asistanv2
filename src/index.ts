@@ -394,34 +394,8 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
 
   await ctx.editMessageText(statusMsg, { parse_mode: "HTML" });
 
-  // 2. Marina'ya final raporunu 10 saniye sonra gönder
-  setTimeout(async () => {
-    try {
-      console.log(
-        `🕒 [FLOW] Final raporu için 10 saniye beklendi... (${draft.order.orderNumber})`,
-      );
-      // Önce detaylı dökümü mesaj olarak gönder
-      const distSummary = buildDistributionSummary(draft.order);
-      await bot.api.sendMessage(marinaId,
-        `✅ <b>Распределение по отделам:</b>\n${distSummary}`,
-        { parse_mode: "HTML" }
-      );
-      const summaryPdf = await orderService.generateMarinaSummaryPDF(
-        draft.order,
-      );
-      await bot.api.sendDocument(
-        marinaId,
-        new InputFile(summaryPdf, `Otchet_${draft.order.orderNumber}.pdf`),
-        {
-          caption: `📄 <b>СВОДНЫЙ ОТЧЁТ ПО ЗАКАЗУ</b>\n📌 № ${draft.order.orderNumber} | 👤 ${draft.order.customerName}`,
-          parse_mode: "HTML",
-        },
-      );
-    } catch (finalErr) {
-      console.error("❌ Final rapor gönderme hatası:", finalErr);
-    }
-  }, 10000);
-
+  // Dağıtım tamamlandı — sessiz kayıt, patron bildirim almaz
+  console.log(`✅ [FLOW] Finalize tamamlandı: ${draft.order.orderNumber}`);
   draftOrderService.removeDraft(draftId);
 });
 
@@ -451,15 +425,8 @@ bot.callbackQuery(/^auto_distribute:(.+)$/, async (ctx) => {
       );
     }
 
-    const summaryPdf = await orderService.generateMarinaSummaryPDF(draft.order);
-    await bot.api.sendDocument(
-      marinaId,
-      new InputFile(summaryPdf, `Final_Rapor_${draft.order.orderNumber}.pdf`),
-      {
-        caption: `✅ <b>Sipariş Dağıtımı Tamamlandı</b>`,
-        parse_mode: "HTML",
-      },
-    );
+    // Sessiz kayıt — boss bildirim almaz
+    console.log(`✅ [FLOW] Auto-distribute tamamlandı: ${draft.order.orderNumber}`);
     await ctx.editMessageText("✅ Sipariş dağıtıldı.");
     draftOrderService.removeDraft(draftId);
   } else {
@@ -880,14 +847,9 @@ if (process.env.GMAIL_ENABLED !== "false") {
                 }, 20000);
               }
 
-              // 2. ADIM: 40 Saniye sonra MARINA'ya bildirim/seçim gönder
-              setTimeout(async () => {
-                const autoInfo =
-                  autoDepts.length > 0
-                    ? `\n\n✅ <b>Распределение по отделам:</b>\n${buildDistributionSummary(order)}`
-                    : "";
-
-                if (hasManualDepts) {
+              // 2. ADIM: 40 Saniye sonra — Manuel dept varsa atama UI gönder, yoksa sessiz devam
+              if (hasManualDepts) {
+                setTimeout(async () => {
                   const keyboard = new InlineKeyboard();
                   const deptsToAssign = Array.from(
                     new Set(
@@ -911,9 +873,9 @@ if (process.env.GMAIL_ENABLED !== "false") {
                     .row();
                   keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
-                  const reportCaption = `📝 <b>Отчёт по заказу</b>\n\n${visualReport}${autoInfo}\n\n<b>Ожидается назначение сотрудников:</b>`;
+                  const reportCaption = `📝 <b>Отчёт по заказу</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
                   console.log(
-                    `🕒 [FLOW] Marina seçimi için 40 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
+                    `🕒 [FLOW] Manuel dept atama için 40 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
                   );
 
                   if (pdfPreviewImg) {
@@ -932,65 +894,19 @@ if (process.env.GMAIL_ENABLED !== "false") {
                       reply_markup: keyboard,
                     });
                   }
-                } else {
-                  // Manuel birim yoksa sadece özet gönder
-                  const shortCaption = `✅ <b>Распределение заказа завершено</b>\n📌 № ${order.orderNumber} | 👤 ${order.customerName}\n\n📄 <b>СВОДНЫЙ ОТЧЁТ ПО ЗАКАЗУ</b> (PDF)`;
-                  console.log(
-                    `🕒 [FLOW] Final özet için 40 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
-                  );
+                }, 40000);
+              } else {
+                // Sadece otomatik deptler — sessiz kayıt, patron bildirim almaz
+                console.log(
+                  `✅ [FLOW] Sipariş otomatik dağıtıldı (patron bildirimi yok): ${order.orderNumber}`,
+                );
+              }
 
-                  // Dökümü ayrı mesaj olarak gönder (caption sınırı aşılmasın)
-                  if (autoInfo) {
-                    await bot.api.sendMessage(marinaId, autoInfo, { parse_mode: "HTML" });
-                  }
-
-                  try {
-                    const summaryPdf =
-                      await orderService.generateMarinaSummaryPDF(order);
-                    await bot.api.sendDocument(
-                      marinaId,
-                      new InputFile(
-                        summaryPdf,
-                        `Otchet_${order.orderNumber}.pdf`,
-                      ),
-                      {
-                        caption: shortCaption,
-                        parse_mode: "HTML",
-                      },
-                    );
-                  } catch (sumErr) {
-                    await bot.api.sendMessage(marinaId, shortCaption, {
-                      parse_mode: "HTML",
-                    });
-                  }
-                }
-              }, 40000);
-
-              // 3. ADIM: 60 Saniye sonra KUMAŞ BİLGİSİ gönder
+              // 3. ADIM: Kumaş bilgisi — sessizce kayıt (bildirim gönderilmez)
               if (fabricItems.length > 0) {
-                setTimeout(async () => {
-                  try {
-                    console.log(
-                      `🕒 [FLOW] Kumaş raporu için 60 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
-                    );
-                    const fabricPdf =
-                      await orderService.generateFabricOrderPDF(order);
-                    await bot.api.sendDocument(
-                      marinaId,
-                      new InputFile(
-                        fabricPdf,
-                        `Zakaz_Tkani_${order.orderNumber}.pdf`,
-                      ),
-                      {
-                        caption:
-                          `🧶 <b>ЗАКАЗ ТКАНИ</b>\n📌 № ${order.orderNumber} | 👤 ${order.customerName}`,
-                        parse_mode: "HTML",
-                      },
-                    );
-                  } catch (fErr) {
-                    console.error("❌ Kumaş PDF hatası:", fErr);
-                  }
-                }, 60000);
+                console.log(
+                  `🧶 [FLOW] Kumaş kalemleri kayıt altına alındı: ${order.orderNumber} (${fabricItems.length} kalem)`,
+                );
               }
 
               excelProcessed = true;
@@ -1063,24 +979,26 @@ if (process.env.GMAIL_ENABLED !== "false") {
               }, 20000);
             }
 
-            // 2. ADIM: 40 saniye sonra Marina bildirimi (Text)
-            setTimeout(async () => {
-              const autoInfo =
-                autoDepts.length > 0
-                  ? `\n\n✅ <b>Распределение по отделам:</b>\n${buildDistributionSummary(order)}`
-                  : "";
-              const reportCaption = `📝 <b>Sipariş Raporu</b>\n\n${visualReport}${autoInfo}`;
-              console.log(
-                `🕒 [FLOW] (Text) Marina bildirimi için 40 saniye beklendi... (${order.orderNumber})`,
-              );
-
-              if (marinaId) {
-                await bot.api.sendMessage(marinaId, reportCaption, {
-                  parse_mode: "HTML",
-                  reply_markup: keyboard,
-                });
-              }
-            }, 40000);
+            // 2. ADIM: Manuel dept varsa 40 saniye sonra atama UI gönder
+            const hasManualDeptsText = order.items.some((i: any) =>
+              MANUAL_DEPARTMENTS.includes(i.department),
+            );
+            if (hasManualDeptsText) {
+              setTimeout(async () => {
+                const reportCaption = `📝 <b>Sipariş Raporu</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
+                console.log(
+                  `🕒 [FLOW] (Text) Manuel dept atama için 40 saniye beklendi... (${order.orderNumber})`,
+                );
+                if (marinaId) {
+                  await bot.api.sendMessage(marinaId, reportCaption, {
+                    parse_mode: "HTML",
+                    reply_markup: keyboard,
+                  });
+                }
+              }, 40000);
+            } else {
+              console.log(`✅ [FLOW] (Text) Sipariş sessiz dağıtıldı: ${order.orderNumber}`);
+            }
           }
         }
 

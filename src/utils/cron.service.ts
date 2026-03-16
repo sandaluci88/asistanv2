@@ -122,11 +122,20 @@ export class CronService {
       { timezone: "Asia/Almaty" },
     );
 
-    // KUMAŞ TAKİP: 24 Saati geçen kumaş onaylarını kontrol et (Her 4 saatte bir)
+    // KUMAŞ TAKİP: Kumaş durumunu günlük kontrol et (Her gün 09:00)
     cron.schedule(
-      "0 */4 * * *",
+      "0 9 * * *",
       () => {
         this.checkFabricStatus();
+      },
+      { timezone: "Asia/Almaty" },
+    );
+
+    // TESLİM TARİHİ: 5 gün kala satıcıya bildirim (Her gün 10:00)
+    cron.schedule(
+      "0 10 * * *",
+      () => {
+        this.checkDeliveryApproaching();
       },
       { timezone: "Asia/Almaty" },
     );
@@ -474,6 +483,61 @@ export class CronService {
       );
     } catch (error) {
       console.error("❌ Üretim takip hatası:", error);
+    }
+  }
+
+  /**
+   * Teslim tarihine 5 gün kala patrona bildirim gönderir.
+   * Her sipariş için yalnızca bir kez tetiklenir.
+   */
+  async checkDeliveryApproaching() {
+    try {
+      const orders = this.orderService.getOrders();
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      for (const order of orders) {
+        if (order.status === "archived" || order.status === "completed") continue;
+        if (!order.deliveryDate) continue;
+
+        // Teslim tarihini ayrıştır (DD.MM.YYYY veya YYYY-MM-DD veya serbest metin)
+        let delivery: Date | null = null;
+        const raw = order.deliveryDate.trim();
+        const dmyMatch = raw.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/);
+        const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (dmyMatch) {
+          delivery = new Date(
+            parseInt(dmyMatch[3]),
+            parseInt(dmyMatch[2]) - 1,
+            parseInt(dmyMatch[1]),
+          );
+        } else if (isoMatch) {
+          delivery = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+        }
+
+        if (!delivery || isNaN(delivery.getTime())) continue;
+        delivery.setHours(0, 0, 0, 0);
+
+        const daysLeft = Math.round(
+          (delivery.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        if (daysLeft === 5) {
+          const msg =
+            `📦 <b>TESLİMAT YAKLAŞIYOR</b>\n\n` +
+            `📌 Sipariş: <b>${order.orderNumber}</b>\n` +
+            `👤 Müşteri: <b>${order.customerName}</b>\n` +
+            `📅 Teslim Tarihi: <b>${order.deliveryDate}</b>\n\n` +
+            `⚠️ <i>Teslimata 5 gün kaldı. Satıcıya/müşteriye bilgi verilmesi gerekiyor.</i>`;
+
+          await this.bot.api.sendMessage(this.targetChatId, msg, {
+            parse_mode: "HTML",
+          });
+          console.log(`🔔 Teslim tarihi yaklaşıyor: ${order.orderNumber} (${order.customerName}) — ${daysLeft} gün kaldı`);
+        }
+      }
+    } catch (error) {
+      console.error("❌ Teslim tarihi kontrolü hatası:", error);
     }
   }
 }

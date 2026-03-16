@@ -110,15 +110,23 @@ export class OrderRepository {
     return activeItems;
   }
 
+  private businessDaysPassed(from: Date, to: Date): number {
+    let count = 0;
+    const current = new Date(from);
+    while (current < to) {
+      current.setDate(current.getDate() + 1);
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) count++;
+    }
+    return count;
+  }
+
   public getItemsNeedingFollowUp(): { order: OrderDetail; item: OrderItem }[] {
-    const deptTimelines: Record<string, number> = {
-      ahşap: 20,
-      "metal üretimi": 20,
-      "mobilya dekorasyon": 20,
-      "karkas üretimi": 20,
-      dikişhane: 15,
-      döşemehane: 15,
-    };
+    const TRACKED_DEPTS = [
+      "ahşap", "metal üretimi", "mobilya dekorasyon",
+      "karkas üretimi", "dikişhane", "döşemehane",
+    ];
+    const BUSINESS_DAY_THRESHOLD = 5;
     const now = new Date();
     const results: { order: OrderDetail; item: OrderItem }[] = [];
 
@@ -129,17 +137,14 @@ export class OrderRepository {
           item.distributedAt &&
           item.assignedWorker
         ) {
-          const deptKey = Object.keys(deptTimelines).find((d) =>
+          const isTracked = TRACKED_DEPTS.some((d) =>
             item.department.toLowerCase().includes(d),
           );
-          if (!deptKey) return;
+          if (!isTracked) return;
 
-          const requiredDays = deptTimelines[deptKey];
           const dist = new Date(item.distributedAt);
-          const daysPassed = Math.floor(
-            (now.getTime() - dist.getTime()) / (1000 * 60 * 60 * 24),
-          );
-          if (daysPassed >= requiredDays) {
+          const bizDays = this.businessDaysPassed(dist, now);
+          if (bizDays >= BUSINESS_DAY_THRESHOLD) {
             results.push({ order, item });
           }
         }
