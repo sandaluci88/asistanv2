@@ -506,7 +506,7 @@ export class PDFService {
                   align: "center",
                   valign: "center",
                 });
-              } catch (_e) {
+              } catch {
                 doc
                   .fontSize(8)
                   .fillColor("#999")

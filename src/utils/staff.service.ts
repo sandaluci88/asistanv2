@@ -211,8 +211,8 @@ export class StaffService {
 
   public isBoss(telegramId: number): boolean {
     // 1. .env'deki TELEGRAM_BOSS_ID kontrolü (En güvenli yöntem)
-    const bossId = process.env.TELEGRAM_BOSS_ID;
-    if (bossId && telegramId.toString() === bossId) {
+    const bossId = (process.env.TELEGRAM_BOSS_ID || "").trim();
+    if (bossId && telegramId.toString().trim() === bossId) {
       return true;
     }
 

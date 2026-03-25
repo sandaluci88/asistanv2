@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { OpenRouterService } from "./llm.service";
 import { StaffService } from "./staff.service";
-import { ExcelRow, XlsxUtils } from "./xlsx-utils";
+import { ExcelRow } from "./xlsx-utils";
 import { ImageEmbeddingService } from "./image-embedding.service";
 import { SupabaseService } from "./supabase.service";
 import { t, Language, translateDepartment } from "./i18n";

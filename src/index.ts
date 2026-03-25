@@ -141,9 +141,9 @@ async function sendMessageWithDuplicateCheck(
 }
 
 const supervisorId =
-  allowlist[0] && allowlist[0] !== "" ? allowlist[0] : chatId || "";
-const marinaId = supervisorId; // Test aşamasında her iki rol de Patron/Süpervizör ID'sinde
-const marinaLang: Language = "ru";
+  (process.env.TELEGRAM_BOSS_ID || allowlist[0] || chatId || "").trim();
+const marinaId = supervisorId; // Test aşamasında her iki rol de Patron/Süpervizör ID'mesinde
+const _marinaLang: Language = "ru";
 
 console.log(`👤 Sistem Yöneticisi (Patron): ${supervisorId}`);
 console.log(`👤 Sipariş Onay Yetkilisi (Geçici): ${marinaId}`);
@@ -510,7 +510,7 @@ async function processOrderDistribution(
   excelRows: any[],
   manualAssignments: Record<string, number> | undefined,
   targetDepts: string[],
-  isDraft: boolean = false,
+  _isDraft: boolean = false,
 ): Promise<{ success: string[]; failed: string[] }> {
   const report = { success: [] as string[], failed: [] as string[] };
 
@@ -520,7 +520,7 @@ async function processOrderDistribution(
       .sort((a: any, b: any) => (a.rowIndex ?? 0) - (b.rowIndex ?? 0));
     if (deptItems.length === 0) continue;
 
-    const deptMsg = orderService.generateDeptView(
+    const _deptMsg = orderService.generateDeptView(
       deptItems,
       order.customerName as string,
       currentDept,
@@ -798,9 +798,8 @@ if (process.env.GMAIL_ENABLED !== "false") {
               draftOrderService.saveDraft(draftId, { order, images });
 
               const visualReport = orderService.generateVisualTable(order);
-              const marinaId = process.env.TELEGRAM_CHAT_ID;
               if (!marinaId) {
-                console.error("❌ TELEGRAM_CHAT_ID eksik!");
+                console.error("❌ marinaId (Patron/Süpervizör) eksik!");
                 continue;
               }
 
@@ -815,7 +814,7 @@ if (process.env.GMAIL_ENABLED !== "false") {
               let pdfPreviewImg: Buffer | undefined;
               try {
                 // Burada preview generation logic varsa eklenebilir, şimdilik undefined
-              } catch (e) {}
+              } catch {}
 
               const autoDepts = Array.from(
                 new Set(order.items.map((i: any) => i.department)),
@@ -927,7 +926,6 @@ if (process.env.GMAIL_ENABLED !== "false") {
             const draftId = `draft_${Date.now()}`;
             draftOrderService.saveDraft(draftId, { order, images });
             const visualReport = orderService.generateVisualTable(order);
-            const marinaId = process.env.TELEGRAM_CHAT_ID || "";
 
             const keyboard = new InlineKeyboard();
             const deptsToAssign = Array.from(
@@ -1014,7 +1012,6 @@ if (process.env.GMAIL_ENABLED !== "false") {
 }
 
 // Sunucu Başlatma
-const port = Number(process.env.PORT) || 3000;
 const botEnabled = process.env.BOT_ENABLED !== "false";
 if (botEnabled) {
   const httpPort = Number(process.env.PORT) || 3000;
