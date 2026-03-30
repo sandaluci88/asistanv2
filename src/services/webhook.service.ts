@@ -77,8 +77,11 @@ export class WebhookService {
     const { type, targetChatId, message, secret } = payload;
 
     // Basit bir güvenlik kontrolü
-    const expectedSecret =
-      process.env.WEBHOOK_SECRET || "sandaluci_secret_2024";
+    const expectedSecret = process.env.WEBHOOK_SECRET;
+    if (!expectedSecret) {
+      logger.error("WEBHOOK_SECRET is NOT set in environment variables!");
+      return false;
+    }
     if (secret !== expectedSecret) {
       logger.warn(`⚠️ Geçersiz webhook secret denemesi: ${type}`);
       return false;

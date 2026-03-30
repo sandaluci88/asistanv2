@@ -11,6 +11,7 @@ export class MemoryService {
   private memoryDir: string;
   private archiveDir: string;
   private maxAgeMs: number; // 3 days
+  private drafts: Map<string, any> = new Map();
 
   constructor() {
     this.memoryDir = path.join(process.cwd(), "data", "memory");
@@ -59,7 +60,6 @@ export class MemoryService {
         (msg) => now - msg.timestamp > this.maxAgeMs,
       );
 
-      // If we filtered out old messages, archive them and update the current file
       if (archivedMessages.length > 0) {
         await this.archiveMessages(chatId, archivedMessages);
         await this.ensureDirs();
@@ -130,6 +130,19 @@ export class MemoryService {
     } catch (error) {
       console.error(`Failed to write to archive for chat ${chatId}`, { error });
     }
+  }
+
+  saveDraft(id: string, data: any) {
+    this.drafts.set(id, data);
+    setTimeout(() => this.drafts.delete(id), 30 * 60 * 1000);
+  }
+
+  getDraft(id: string) {
+    return this.drafts.get(id);
+  }
+
+  deleteDraft(id: string) {
+    this.drafts.delete(id);
   }
 }
 

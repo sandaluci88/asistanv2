@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard, InputFile } from "grammy";
+import { Bot, InlineKeyboard, Keyboard, InputFile } from "grammy";
 import * as fs from "fs";
 import * as path from "path";
 import http from "http";
@@ -44,15 +44,28 @@ const isManualDept = (dept: string) => {
 
 // Departman bazlı ürün dökümü — son raporda kullanılır
 function buildDistributionSummary(order: any): string {
-  const deptMap = new Map<string, { product: string; qty: number; details: string }[]>();
+  const deptMap = new Map<
+    string,
+    { product: string; qty: number; details: string }[]
+  >();
   for (const item of order.items) {
     const d = item.department as string;
     if (!deptMap.has(d)) deptMap.set(d, []);
-    deptMap.get(d)!.push({ product: item.product, qty: item.quantity, details: item.details || "" });
+    deptMap
+      .get(d)!
+      .push({
+        product: item.product,
+        qty: item.quantity,
+        details: item.details || "",
+      });
   }
   const deptEmoji: Record<string, string> = {
-    "Karkas Üretimi": "🔩", "Boyahane": "🎨", "Kumaş": "🧶",
-    "Dikişhane": "🧵", "Döşemehane": "🪑", "Satınalma": "🛒",
+    "Karkas Üretimi": "🔩",
+    Boyahane: "🎨",
+    Kumaş: "🧶",
+    Dikişhane: "🧵",
+    Döşemehane: "🪑",
+    Satınalma: "🛒",
     "Metal Üretimi": "⚙️",
   };
   let s = `━━━━━━━━━━━━━━━━━━━━\n`;
@@ -140,9 +153,9 @@ async function sendMessageWithDuplicateCheck(
   }
 }
 
-const supervisorId =
-  (process.env.TELEGRAM_BOSS_ID || allowlist[0] || chatId || "").trim();
-const marinaId = supervisorId; // Test aşamasında her iki rol de Patron/Süpervizör ID'mesinde
+const bossId = Number(process.env.TELEGRAM_BOSS_ID);
+const supervisorId = Number(process.env.TELEGRAM_MARINA_ID); // Marina is supervisor
+const marinaId = supervisorId;
 const _marinaLang: Language = "ru";
 
 console.log(`👤 Sistem Yöneticisi (Patron): ${supervisorId}`);
@@ -188,9 +201,19 @@ bot.use(async (ctx, next) => {
 
   // Yetkisiz erişim denemesi
   if (ctx.chat?.type === "private") {
+    // Telefon numarası ile eşleşen bir pending kayıt var mı kontrol et?
+    // Not: Middleware'de telefon numarası henüz yok, o yüzden genel bir davet gönderiyoruz.
+    const keyboard = new Keyboard()
+      .requestContact("📱 Telefon Numaranı Paylaş")
+      .oneTime()
+      .resized();
+
     await ctx.reply(
-      "Merhaba! Ben Ayça. 🙋‍♀️ Şu an sadece Barış Bey ve kayıtlı Sandaluci personeline hizmet veriyorum.\n\nEğer ekipten biriysen lütfen `/kayit İsim | Departman` komutuyla kendini tanıtır mısın?",
-      { parse_mode: "Markdown" },
+      "Merhaba! Ben Ayça. 🙋‍♀️ Sandaluci üretim asistanıyım.\n\nSeni personel listemde bulamadım. Eğer ekibe yeni katıldıysan, kaydını tamamlamak için lütfen aşağıdaki butona basarak telefon numaranı paylaşır mısın?",
+      {
+        parse_mode: "Markdown",
+        reply_markup: keyboard,
+      },
     );
   }
 });
@@ -225,9 +248,10 @@ bot.command("doctor", async (ctx) => {
   );
 });
 
-// Mesaj Handlerı (Metin, Ses ve Döküman desteği)
-bot.on(["message:text", "message:voice", "message:document"], (ctx) =>
-  messageHandler.handle(ctx),
+// Mesaj Handlerı (Metin, Ses, Döküman ve Kişi desteği)
+bot.on(
+  ["message:text", "message:voice", "message:document", "message:contact"],
+  (ctx) => messageHandler.handle(ctx),
 );
 
 // Callback Query Handlerı
@@ -342,9 +366,11 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
   const onlyManual = assignedDepts.filter((d) => isManualDept(d));
 
   // FIX: Auto departmanları da gönder (Karkas, Boyahane vb. atlanmasın)
-  const autoDepts = (Array.from(
-    new Set(draft.order.items.map((i: any) => i.department as string)),
-  ) as string[]).filter((d) => !isManualDept(d));
+  const autoDepts = (
+    Array.from(
+      new Set(draft.order.items.map((i: any) => i.department as string)),
+    ) as string[]
+  ).filter((d) => !isManualDept(d));
 
   // Üretim akış sırası: Satınalma → Karkas → Boyahane → Kumaş → Dikişhane → Döşemehane
   const DEPT_FLOW_ORDER = [
@@ -358,8 +384,12 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
   ];
   const allDeptsToSend = [...new Set([...onlyManual, ...autoDepts])].sort(
     (a, b) => {
-      const ai = DEPT_FLOW_ORDER.findIndex((d) => a.includes(d) || d.includes(a));
-      const bi = DEPT_FLOW_ORDER.findIndex((d) => b.includes(d) || d.includes(b));
+      const ai = DEPT_FLOW_ORDER.findIndex(
+        (d) => a.includes(d) || d.includes(a),
+      );
+      const bi = DEPT_FLOW_ORDER.findIndex(
+        (d) => b.includes(d) || d.includes(b),
+      );
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     },
   );
@@ -381,10 +411,10 @@ bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
   let statusMsg = "🚀 <b>Отчёт о распределении заказа</b>\n\n";
 
   if (report.success.length > 0) {
-    statusMsg += `✅ <b>Отправлено:</b> ${report.success.map(d => translateDepartment(d, "ru")).join(", ")}\n`;
+    statusMsg += `✅ <b>Отправлено:</b> ${report.success.map((d) => translateDepartment(d, "ru")).join(", ")}\n`;
   }
   if (report.failed.length > 0) {
-    statusMsg += `❌ <b>ОШИБКА:</b> ${report.failed.map(d => translateDepartment(d, "ru")).join(", ")}\n`;
+    statusMsg += `❌ <b>ОШИБКА:</b> ${report.failed.map((d) => translateDepartment(d, "ru")).join(", ")}\n`;
   }
   if (report.success.length === 0 && report.failed.length === 0) {
     statusMsg += "ℹ️ Дополнительное распределение не выполнялось.\n";
@@ -410,9 +440,11 @@ bot.callbackQuery(/^auto_distribute:(.+)$/, async (ctx) => {
   );
   if (!hasManual) {
     // Manuel dept yok — tüm auto deptlere gönder
-    const autoDepts = (Array.from(
-      new Set(draft.order.items.map((i: any) => i.department as string)),
-    ) as string[]).filter((d) => !isManualDept(d));
+    const autoDepts = (
+      Array.from(
+        new Set(draft.order.items.map((i: any) => i.department as string)),
+      ) as string[]
+    ).filter((d) => !isManualDept(d));
 
     if (autoDepts.length > 0) {
       await processOrderDistribution(
@@ -426,7 +458,9 @@ bot.callbackQuery(/^auto_distribute:(.+)$/, async (ctx) => {
     }
 
     // Sessiz kayıt — boss bildirim almaz
-    console.log(`✅ [FLOW] Auto-distribute tamamlandı: ${draft.order.orderNumber}`);
+    console.log(
+      `✅ [FLOW] Auto-distribute tamamlandı: ${draft.order.orderNumber}`,
+    );
     await ctx.editMessageText("✅ Sipariş dağıtıldı.");
     draftOrderService.removeDraft(draftId);
   } else {
@@ -484,7 +518,7 @@ bot.callbackQuery(/^reject_order:(.+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
 });
 
-// --- Kumaş Kontrol Butonları ---
+// --- Diğer Callbackleri ---
 bot.callbackQuery(/^fabric_ok:(.+)$/, async (ctx) => {
   const itemId = ctx.match[1];
   const lang = getUserLanguage((ctx as any).role);
@@ -533,7 +567,7 @@ async function processOrderDistribution(
         currentDept,
       );
       await orderService.archivePDF(currentDept, pdfBuffer);
-      
+
       const safeCustomerName = (order.customerName || "Bilinmiyor")
         .replace(/[^a-zA-Z0-9]/g, "_")
         .substring(0, 30);
@@ -572,7 +606,7 @@ async function processOrderDistribution(
             console.log(
               `⚠️ ${currentDept} için personel yok, Marina'ya gönderiliyor.`,
             );
-            targetIds = [parseInt(marinaId)];
+            targetIds = [bossId || Number(marinaId)];
           }
         }
       }
@@ -868,7 +902,10 @@ if (process.env.GMAIL_ENABLED !== "false") {
                   });
 
                   keyboard
-                    .text("🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ", `auto_distribute:${draftId}`)
+                    .text(
+                      "🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ",
+                      `auto_distribute:${draftId}`,
+                    )
                     .row();
                   keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
@@ -995,7 +1032,9 @@ if (process.env.GMAIL_ENABLED !== "false") {
                 }
               }, 40000);
             } else {
-              console.log(`✅ [FLOW] (Text) Sipariş sessiz dağıtıldı: ${order.orderNumber}`);
+              console.log(
+                `✅ [FLOW] (Text) Sipariş sessiz dağıtıldı: ${order.orderNumber}`,
+              );
             }
           }
         }
@@ -1042,7 +1081,7 @@ if (botEnabled) {
     });
 
     // Botu başlat
-console.log("🚀 AYÇA BOT BAŞLATILIYOR... (Terminal Kontrol)");
-bot.start().catch((e) => console.error("Bot start error:", e));
+    console.log("🚀 AYÇA BOT BAŞLATILIYOR... (Terminal Kontrol)");
+    bot.start().catch((e) => console.error("Bot start error:", e));
   });
 }

@@ -57,6 +57,9 @@ export class MessageHandler {
     } else if (ctx.message.document) {
       await this.handleDocument(ctx);
       return;
+    } else if (ctx.message.contact) {
+      await this.handleContact(ctx);
+      return;
     } else {
       // Desteklenmeyen bir mesaj tipi, text, voice veya document değil
       return;
@@ -139,93 +142,46 @@ export class MessageHandler {
         return;
       }
 
-      // FIX: attachment olarak geçir — resimler ve isExcel flag'i doğru çalışsın
-      const attachment = {
-        filename: fileName,
-        content: buffer,
-        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      };
+      const isBoss = (ctx as any).role === "boss";
 
-      // FIX: subject=fileName, content="", attachments=[attachment]
-      // parseAndCreateOrder içinde attachment'tan Excel okunacak, resimler işlenecek
-      const order = await this.orderService.parseAndCreateOrder(
-        fileName,
-        "",
-        "tg_upload",
-        [attachment],
-      );
+      if (isBoss) {
+        // Excel dosyasını geçici hafızada "son yüklenen" olarak tut
+        memoryService.saveDraft(`last_xl_${ctx.from?.id}`, {
+          fileName,
+          buffer,
+        });
 
-      if (!order) {
-        await ctx.reply("❌ Sipariş verisi LLM tarafından ayrıştırılamadı.");
+        await ctx.reply(
+          `📊 *Excel Dosyası Alındı:* \`${fileName}\`\nSipariş olarak işleniyor...`,
+        );
+
+        // Doğrudan sipariş olarak işle
+        await this.orderService.processExcelOrder(
+          buffer,
+          ctx.from?.id.toString() || "0",
+        );
         return;
       }
-
-      if (order.isDuplicate) {
-        await ctx.reply("⚠️ Bu sipariş zaten sistemde kayıtlı (mükerrer), tekrar işlenmedi.");
-        return;
-      }
-
-      const { DraftOrderService } = await import("../utils/draft-order.service");
-      const draftOrderService = DraftOrderService.getInstance();
-      const draftId = `tg_${Date.now()}`;
-      const floatingImages = (rows as any).floatingImages || [];
-
-      draftOrderService.saveDraft(draftId, {
-        order: order,
-        images: floatingImages,
-        excelRows: rows,
-      });
-
-      const summary = this.orderService.generateVisualTable(order);
-      const { InlineKeyboard } = await import("grammy");
-      const keyboard = new InlineKeyboard();
-
-      // FIX: Siparişte gerçekten hangi manuel departmanlar varsa onları göster
-      const MANUAL_DEPTS = ["Dikişhane", "Döşemehane", "Dikiş", "Döşeme", "Швейный цех", "Обивочный цех", "Швейный", "Обивочный", "Sewing", "Upholstery"];
-      const isManual = (dept: string) => {
-        const d = (dept || "").toLowerCase().trim();
-        return MANUAL_DEPTS.some((m) => d.includes(m.toLowerCase()) || m.toLowerCase().includes(d));
-      };
-
-      const manualDepts = Array.from(new Set(
-        order.items
-          .filter((i: any) => isManual(i.department))
-          .map((i: any) => i.department as string),
-      ));
-
-      const getDeptBtn = (dept: string) => {
-        if (dept.toLowerCase().includes("dikiş")) return "🧵 Dikişçi Seç";
-        if (dept.toLowerCase().includes("döşeme")) return "🪑 Döşemeci Seç";
-        if (dept.toLowerCase().includes("satınalma")) return "🛒 Satınalma Seç";
-        return `${dept} Seç`;
-      };
-
-      manualDepts.forEach((d) => {
-        keyboard.text(getDeptBtn(d), `select_dept_staff:${draftId}|${d}`).row();
-      });
-
-      keyboard.text("🚀 DAĞITIMI BAŞLAT", `auto_distribute:${draftId}`).row();
-      keyboard.text("❌ İptal", `reject_order:${draftId}`);
 
       await ctx.reply(
-        `📝 <b>Yeni Excel Siparişi</b>\n\n${summary}\n\n${manualDepts.length > 0 ? "<b>Personel ataması gerekiyor:</b>" : "✅ Otomatik dağıtım hazır."}`,
-        {
-          parse_mode: "HTML",
-          reply_markup: keyboard,
-        },
+        "❌ Excel dosyası işleme yetkisi sadece Barış Bey'e aittir.",
       );
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || error.message;
-      logger.error({
-        error: errorMessage,
-        status: error.status,
-        fileId: doc.file_id,
-        fileName: fileName,
-        chatId: ctx.chat?.id,
-        userId: ctx.from?.id,
-      }, "❌ Excel dosyası işlenirken bir hata oluştu.");
+      const errorMessage =
+        error.response?.data?.error?.message || error.message;
+      logger.error(
+        {
+          error: errorMessage,
+          status: error.status,
+          fileId: doc.file_id,
+          fileName: fileName,
+          chatId: ctx.chat?.id,
+          userId: ctx.from?.id,
+        },
+        "❌ Excel dosyası işlenirken bir hata oluştu.",
+      );
       await ctx.reply(
-        "❌ Üzgünüm, Excel dosyanızı işlerken bir sorun çıktı. Lütfen dosyanın doğru formatta olduğundan emin olup tekrar dener misiniz?"
+        "❌ Üzgünüm, Excel dosyanızı işlerken bir sorun çıktı. Lütfen dosyanın doğru formatta olduğundan emin olup tekrar dener misiniz?",
       );
     }
   }
@@ -279,6 +235,31 @@ export class MessageHandler {
     text: string,
     isBoss: boolean,
   ) {
+    const lowerText = text.toLowerCase();
+
+    // "Gerekini yap" talimatı (Excel -> Personel Listesi dönüşümü)
+    if (
+      isBoss &&
+      (lowerText.includes("gerekini yap") || lowerText.includes("gerekeni yap"))
+    ) {
+      const lastXl = memoryService.getDraft(`last_xl_${ctx.from?.id}`);
+      if (lastXl) {
+        await ctx.reply(
+          "🫡 Anlaşıldı Barış Bey, son gönderdiğiniz dosyayı *Personel Listesi* olarak işliyorum...",
+          { parse_mode: "Markdown" },
+        );
+        const result = await this.staffService.processExcelStaff(
+          lastXl.buffer,
+          ctx.from?.id.toString() || "0",
+        );
+        await ctx.reply(
+          `✅ Personel listesi başarıyla güncellendi: ${result.count} kişi kaydedildi.`,
+        );
+        memoryService.deleteDraft(`last_xl_${ctx.from?.id}`);
+        return;
+      }
+    }
+
     // E-posta Gönderme Tespiti
     const emailKeywords = [
       "mail at",
@@ -573,6 +554,48 @@ export class MessageHandler {
     } catch (e) {
       console.error("Order Status Report Error:", e);
       await ctx.reply("❌ Veritabanı okunurken bir hata oluştu.");
+    }
+  }
+
+  private async handleContact(ctx: Context) {
+    const contact = ctx.message?.contact;
+    if (!contact || !ctx.from) return;
+
+    const phone = contact.phone_number;
+    const userId = ctx.from.id;
+
+    await ctx.reply("🔄 Kimlik bilgileriniz kontrol ediliyor...");
+
+    try {
+      const staff = await this.staffService.verifyStaffByPhone(userId, phone);
+
+      if (staff) {
+        await ctx.reply(
+          `✅ *Kayıt Başarılı!* \n\nHoşgeldin *${staff.name}*. \nArtık Sandaluci üretim sistemine dahilsin. ${staff.department} departmanı için gelecek iş emirlerini buradan alacaksın.`,
+          {
+            parse_mode: "Markdown",
+            reply_markup: { remove_keyboard: true },
+          },
+        );
+
+        // Patrona bilgi ver
+        const bossId = process.env.TELEGRAM_BOSS_ID;
+        if (bossId) {
+          await ctx.api.sendMessage(
+            bossId,
+            `📢 *Yeni Personel Kaydı:* \n\n*İsim:* ${staff.name}\n*Departman:* ${staff.department}\n*ID:* ${userId}`,
+            { parse_mode: "Markdown" },
+          );
+        }
+      } else {
+        await ctx.reply(
+          "❌ Üzgünüm, paylaştığınız telefon numarası personel listemizde bulunamadı. Lütfen Barış Bey ile iletişime geçin.",
+          { reply_markup: { remove_keyboard: true } },
+        );
+      }
+    } catch (error) {
+      logger.error({ error }, "Contact verification error");
+      await ctx.reply("❌ Kayıt sırasında teknik bir hata oluştu.");
     }
   }
 }

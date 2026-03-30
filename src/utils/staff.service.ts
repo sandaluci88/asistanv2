@@ -193,6 +193,77 @@ export class StaffService {
     }
   }
 
+  /**
+   * Excel'den gelen personel listesini işler ve bekleyen (pending) olarak kaydeder.
+   */
+  public async processStaffExcel(rows: any[]) {
+    console.log(`📊 ${rows.length} satırlık personel listesi işleniyor...`);
+
+    for (const row of rows) {
+      // Beklenen sütunlar: İsim, Departman, Telefon (veya Col1, Col2, Col3)
+      const name = row.İsim || row.Name || row.Col1 || row.Col2;
+      const dept = row.Departman || row.Department || row.Col2 || row.Col3;
+      let phone = row.Telefon || row.Phone || row.Col3 || row.Col4;
+
+      if (!name || !dept) continue;
+
+      // Telefon numarasını temizle (sadece rakamlar)
+      if (phone) {
+        phone = phone.toString().replace(/\D/g, "");
+        if (!phone.startsWith("+")) phone = "+" + phone;
+      }
+
+      const staffData: Staff = {
+        name: name.toString().trim(),
+        department: dept.toString().trim(),
+        phone: phone ? phone.toString().trim() : undefined,
+        role: "Personnel",
+        language: "ru",
+      };
+
+      try {
+        await this.supabase.upsertStaff(staffData);
+      } catch (err) {
+        console.error(`❌ ${name} kaydı sırasında hata:`, err);
+      }
+    }
+
+    await this.loadStaffFromSupabase();
+  }
+
+  /**
+   * Telefon numarası ile eşleşen personeli bulur ve Telegram ID'sini atar.
+   */
+  public async verifyStaffByPhone(
+    telegramId: number,
+    phone: string,
+  ): Promise<Staff | null> {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const staff = this.staffList.find((s) => {
+      const sPhone = s.phone ? s.phone.replace(/\D/g, "") : "";
+      return sPhone.includes(cleanPhone);
+    });
+
+    if (!staff) {
+      console.log(`⚠️ Telefon eşleşmesi bulunamadı: ${phone}`);
+      return null;
+    }
+
+    const updatedStaff: Staff = {
+      ...staff,
+      telegramId,
+    };
+
+    try {
+      await this.supabase.upsertStaff(updatedStaff);
+      await this.loadStaffFromSupabase();
+      return updatedStaff;
+    } catch (err) {
+      console.error("❌ Kayıt tamamlanamadı:", err);
+      return null;
+    }
+  }
+
   public async removeStaff(telegramId: number): Promise<boolean> {
     const index = this.staffList.findIndex((s) => s.telegramId === telegramId);
     if (index !== -1) {
@@ -219,6 +290,28 @@ export class StaffService {
     // 2. Staff listesindeki role kontrolü (Yedek yöntem)
     const staff = this.getStaffByTelegramId(telegramId);
     return staff?.role === "SuperAdmin";
+  }
+
+  public async processExcelStaff(
+    buffer: Buffer,
+    _uid: string = "0",
+  ): Promise<{ count: number }> {
+    const { XlsxUtils } = require("./xlsx-utils");
+    const rows = XlsxUtils.parseExcel(buffer);
+
+    let count = 0;
+    for (const row of rows) {
+      if (row.phone) {
+        await this.supabase.upsertStaff({
+          name: row.name || "Bilinmiyor",
+          phone: row.phone.toString(),
+          department: row.department || "Diğer",
+        });
+        count++;
+      }
+    }
+    await this.loadStaffFromSupabase();
+    return { count };
   }
 
   public getDepartments(): string[] {

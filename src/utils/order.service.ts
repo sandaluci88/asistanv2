@@ -66,11 +66,13 @@ export class OrderService {
       // 🚨 SİSTEM VE REKLAM MAİLLERİNİ FİLTRELE
       const lowerSubject = (subject || "").toLowerCase();
       const lowerContent = (content || "").toLowerCase();
-      const hasExcel = attachments?.some(a => a.filename?.endsWith(".xlsx") || a.filename?.endsWith(".xls"));
+      const hasExcel = attachments?.some(
+        (a) => a.filename?.endsWith(".xlsx") || a.filename?.endsWith(".xls"),
+      );
 
       // Eğer mail bir sipariş içermiyorsa (Excel yoksa) ve sistem/bildirim maili gibiyse atla
-      const isSystemMail = 
-        lowerSubject.includes("netlify") || 
+      const isSystemMail =
+        lowerSubject.includes("netlify") ||
         lowerSubject.includes("welcome") ||
         lowerSubject.includes("verification") ||
         lowerSubject.includes("security alert") ||
@@ -83,7 +85,9 @@ export class OrderService {
         lowerContent.includes("billing");
 
       if (isSystemMail && !hasExcel) {
-        console.log(`⏭️ [SKIP] Sistem maili tespit edildi, sipariş işlemi atlanıyor: "${subject}"`);
+        console.log(
+          `⏭️ [SKIP] Sistem maili tespit edildi, sipariş işlemi atlanıyor: "${subject}"`,
+        );
         return null;
       }
 
@@ -103,11 +107,15 @@ export class OrderService {
           if (!isXlsx) continue;
 
           try {
-            logger.info(`📊 Sabit Excel parser başlatılıyor: ${attachment.filename}`);
+            logger.info(
+              `📊 Sabit Excel parser başlatılıyor: ${attachment.filename}`,
+            );
             const parsed = await parseOrderExcel(attachment.content);
 
             if (!parsed) {
-              logger.warn(`⚠️ Sabit parser sonuç döndürmedi: ${attachment.filename}`);
+              logger.warn(
+                `⚠️ Sabit parser sonuç döndürmedi: ${attachment.filename}`,
+              );
               continue;
             }
 
@@ -115,15 +123,21 @@ export class OrderService {
 
             // Mükerrer kontrolü
             const allOrders = this.repository.getAll();
-            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-            const recentOrders = allOrders.filter((o: OrderDetail) => o.createdAt > oneDayAgo);
+            const oneDayAgo = new Date(
+              Date.now() - 24 * 60 * 60 * 1000,
+            ).toISOString();
+            const recentOrders = allOrders.filter(
+              (o: OrderDetail) => o.createdAt > oneDayAgo,
+            );
 
             for (const existing of recentOrders) {
               if (
                 excelOrder.orderNumber &&
                 existing.orderNumber === excelOrder.orderNumber
               ) {
-                logger.warn(`⚠️ Mükerrer sipariş (no eşleşti): ${excelOrder.orderNumber}`);
+                logger.warn(
+                  `⚠️ Mükerrer sipariş (no eşleşti): ${excelOrder.orderNumber}`,
+                );
                 return { ...existing, isDuplicate: true };
               }
             }
@@ -133,17 +147,24 @@ export class OrderService {
 
             await this.repository.save(excelOrder);
 
-            try { await this.saveToVisualMemory(excelOrder); } catch (_) {}
+            try {
+              await this.saveToVisualMemory(excelOrder);
+            } catch (_) {}
             await this.logOrder(excelOrder);
 
             logger.info(
-              { orderNumber: excelOrder.orderNumber, items: excelOrder.items.length },
+              {
+                orderNumber: excelOrder.orderNumber,
+                items: excelOrder.items.length,
+              },
               "✅ Sabit Excel parser ile sipariş oluşturuldu",
             );
             return excelOrder;
-
           } catch (err) {
-            logger.error({ err }, `❌ Sabit Excel parser hatası: ${attachment.filename}`);
+            logger.error(
+              { err },
+              `❌ Sabit Excel parser hatası: ${attachment.filename}`,
+            );
           }
         }
       }
@@ -376,7 +397,7 @@ export class OrderService {
           /\[TR\].*?\/.*?\[RU\]\s*(.*)/i,
           /\[TR\].*?\|.*?\[RU\]\s*(.*)/i,
           /\[RU\]\s*(.*)/i,
-          /^.*?\/.*?\[RU\]\s*(.*)/i
+          /^.*?\/.*?\[RU\]\s*(.*)/i,
         ];
 
         let foundRu = false;
@@ -421,16 +442,27 @@ export class OrderService {
         let finalDept = item.department;
         const lowerProd = (item.product || "").toLowerCase();
         const lowerDetails = (item.details || "").toLowerCase();
-        
+
         // Plastik anahtar kelimeleri (TR + RU + EN)
         const plasticKeywords = [
-          "plastik", "пластик", "plastic",
-          "полимер", "polimer",
-          "полипропилен", "polipropilen", "pp ",
-          "пластмасс", "plasmas",
-          "пвх", "pvc",
-          "пластиковый", "пластиковые", "пластиковая", "пластиковых",
-          "синтетик", "sentetik",
+          "plastik",
+          "пластик",
+          "plastic",
+          "полимер",
+          "polimer",
+          "полипропилен",
+          "polipropilen",
+          "pp ",
+          "пластмасс",
+          "plasmas",
+          "пвх",
+          "pvc",
+          "пластиковый",
+          "пластиковые",
+          "пластиковая",
+          "пластиковых",
+          "синтетик",
+          "sentetik",
         ];
         const isPlastik = plasticKeywords.some(
           (kw) => lowerProd.includes(kw) || lowerDetails.includes(kw),
@@ -501,9 +533,13 @@ export class OrderService {
             const detailsLower = (item.details || "").toLowerCase();
 
             // Plastik ürünler için özel kontrol (TR, RU ve EN)
-            const isImgPlastik = 
-              productLower.includes("plastik") || productLower.includes("пластик") || productLower.includes("plastic") ||
-              detailsLower.includes("plastik") || detailsLower.includes("пластик") || detailsLower.includes("plastic");
+            const isImgPlastik =
+              productLower.includes("plastik") ||
+              productLower.includes("пластик") ||
+              productLower.includes("plastic") ||
+              detailsLower.includes("plastik") ||
+              detailsLower.includes("пластик") ||
+              detailsLower.includes("plastic");
 
             if (isImgPlastik) {
               console.log(
@@ -576,6 +612,67 @@ export class OrderService {
       return order;
     } catch (error) {
       console.error("❌ Sipariş ayrıştırma hatası:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Doğrudan bir Excel buffer'ını sipariş olarak işler.
+   * Barış Bey'den gelen Excel'lerin otomatik sipariş olarak işlenmesi için kullanılır.
+   */
+  async processExcelOrder(
+    buffer: Buffer,
+    _uid: string,
+  ): Promise<OrderDetail | null> {
+    try {
+      logger.info("📊 Doğrudan Excel sipariş işleme başlatılıyor...");
+      const parsed = await parseOrderExcel(buffer);
+
+      if (!parsed) {
+        logger.warn("⚠️ Excel parser sonuç döndürmedi.");
+        return null;
+      }
+
+      const { order: excelOrder } = parsed;
+
+      // Mükerrer kontrolü
+      const allOrders = this.repository.getAll();
+      const oneDayAgo = new Date(
+        Date.now() - 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const recentOrders = allOrders.filter(
+        (o: OrderDetail) => o.createdAt > oneDayAgo,
+      );
+
+      for (const existing of recentOrders) {
+        if (
+          excelOrder.orderNumber &&
+          existing.orderNumber === excelOrder.orderNumber
+        ) {
+          logger.warn(
+            `⚠️ Mükerrer sipariş (no eşleşti): ${excelOrder.orderNumber}`,
+          );
+          return { ...existing, isDuplicate: true } as any;
+        }
+      }
+
+      excelOrder.createdAt = new Date().toISOString();
+      excelOrder.updatedAt = new Date().toISOString();
+
+      await this.repository.save(excelOrder);
+
+      try {
+        await this.saveToVisualMemory(excelOrder);
+      } catch (_) {}
+      await this.logOrder(excelOrder);
+
+      logger.info(
+        { orderNumber: excelOrder.orderNumber, items: excelOrder.items.length },
+        "✅ Doğrudan Excel işleme ile sipariş oluşturuldu",
+      );
+      return excelOrder;
+    } catch (err) {
+      logger.error({ err }, "❌ Doğrudan Excel işleme hatası");
       return null;
     }
   }

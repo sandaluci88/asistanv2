@@ -328,28 +328,42 @@ export class CommandHandler {
 
   public async handleTemizlik(ctx: Context) {
     if (!this.isBoss(ctx)) {
-      await ctx.reply("🔒 Temizlik yetkisi sadece Barış Bey'e (SuperAdmin) aittir.");
+      await ctx.reply(
+        "🔒 Temizlik yetkisi sadece Barış Bey'e (SuperAdmin) aittir.",
+      );
       return;
     }
 
-    const statusMsg = await ctx.reply("🧹 *Sistem temizliği başlatılıyor...* Lütfen bekleyin.", { parse_mode: "Markdown" });
-    
+    const statusMsg = await ctx.reply(
+      "🧹 *Sistem temizliği başlatılıyor...* Lütfen bekleyin.",
+      { parse_mode: "Markdown" },
+    );
+
     const result = await SelfCleanupService.performCleanup();
-    
+
     if (result.success) {
       let report = "✨ *Temizlik Başarıyla Tamamlandı!*\n\n";
       if (result.deletedItems.length > 0) {
         report += "🗑️ *Silinen/Sıfırlanan Öğeler:*\n";
-        result.deletedItems.forEach(item => {
+        result.deletedItems.forEach((item) => {
           report += `- ${item}\n`;
         });
       } else {
         report += "Sistem zaten temizdi, temizlenecek bir şey bulunamadı.";
       }
-      
-      await ctx.api.editMessageText(ctx.chat!.id, statusMsg.message_id, report, { parse_mode: "Markdown" });
+
+      await ctx.api.editMessageText(
+        ctx.chat!.id,
+        statusMsg.message_id,
+        report,
+        { parse_mode: "Markdown" },
+      );
     } else {
-      await ctx.api.editMessageText(ctx.chat!.id, statusMsg.message_id, "❌ Temizlik sırasında bazı hatalar oluştu. Logları kontrol ediniz.");
+      await ctx.api.editMessageText(
+        ctx.chat!.id,
+        statusMsg.message_id,
+        "❌ Temizlik sırasında bazı hatalar oluştu. Logları kontrol ediniz.",
+      );
     }
   }
 }

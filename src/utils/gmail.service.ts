@@ -90,7 +90,7 @@ export class GmailService {
     retries: number = 3,
   ): Promise<void> {
     for (let i = 0; i < retries; i++) {
-       // Check if already authenticated
+      // Check if already authenticated
       if (client.authenticated) {
         logger.info("📡 IMAP: Client already authenticated, skipping connect.");
         return;
@@ -101,10 +101,12 @@ export class GmailService {
         return;
       } catch (err: any) {
         const errorMsg = err.message || "";
-        
+
         // If the error says we are already connected (ready state), we are good to go
         if (errorMsg.includes("ready state")) {
-          logger.info("📡 IMAP: Client was already in ready state. Continuing...");
+          logger.info(
+            "📡 IMAP: Client was already in ready state. Continuing...",
+          );
           return;
         }
 

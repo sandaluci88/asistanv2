@@ -115,20 +115,24 @@ Bu bölüm, projenin başından sonuna kadar geçirdiği evreleri ve teknik baş
 Sistemin stabilitesini korumak ve geçmişte yaşanan hataların tekrarlanmaması için aşağıdaki kurallar **KESİNLİKLE** uygulanmalıdır:
 
 ### 1. Singleton (Tekil) Mimari Kuralı
+
 - `OrderService`, `StaffService` ve `CronService` gibi sınıflar **Singleton** yapısındadır.
 - **HATA:** `new OrderService()` şeklinde yeni bir instance oluşturmayın!
 - **DOĞRU:** `OrderService.getInstance()` metodunu kullanın. Bu, veritabanı bağlantılarının ve önbelleğin (cache) tutarlı kalmasını sağlar.
 
 ### 2. Ortam Değişkenleri (.env) Güvenliği
+
 - `.env` dosyasındaki API anahtarlarında **asla tırnak işareti (`" "`) kullanmayın**.
 - **Model İsmi:** Her zaman `google/gemini-2.0-flash-001` veya `.env`'de tanımlı güncel modeli kullanın.
 - `APP_URL` güncellenirken sonunda `/` işareti olmamasına dikkat edin.
 
 ### 3. Deployment & Build Prosedürü
+
 - Kod push edilmeden önce mutlaka `npx tsc --noEmit` ile TypeScript kontrolü yapılmalıdır.
 - `npm run build` komutu Docker/Coolify üzerinde çalışırken hata veriyorsa, `src/index.ts` üzerindeki tip tanımlamalarını (explicit typing) kontrol edin.
 
 ### 4. Hizmet Sağlık Kontrolleri
+
 - `/doctor` komutu sistemin tüm portlarını (Gmail, DB, LLM) TCP seviyesinde tarar. Bir sorun olduğunda ilk bu komutu kullanın.
 - OpenRouter hatalarında `src/utils/test-openrouter.ts` scriptini çalıştırarak anahtarın geçerliliğini manuel doğrulayın.
 

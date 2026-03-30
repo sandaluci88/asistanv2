@@ -123,8 +123,12 @@ export class OrderRepository {
 
   public getItemsNeedingFollowUp(): { order: OrderDetail; item: OrderItem }[] {
     const TRACKED_DEPTS = [
-      "ahşap", "metal üretimi", "mobilya dekorasyon",
-      "karkas üretimi", "dikişhane", "döşemehane",
+      "ahşap",
+      "metal üretimi",
+      "mobilya dekorasyon",
+      "karkas üretimi",
+      "dikişhane",
+      "döşemehane",
     ];
     const BUSINESS_DAY_THRESHOLD = 5;
     const now = new Date();

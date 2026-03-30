@@ -33,7 +33,7 @@ const COL = {
   OLCU: 5,
   DEPARTMAN: 6,
   STOK_NOT: 7,
-  TUR: 8,        // AHSAP / PLASTİK / METAL
+  TUR: 8, // AHSAP / PLASTİK / METAL
   KUMAS: 9,
   DIKIS: 10,
   DOSEME: 11,
@@ -59,8 +59,17 @@ function isEmpty(v: string): boolean {
 
 function isPlastic(tur: string, urunAdi: string, not: string): boolean {
   const keywords = [
-    "plastik", "пластик", "plastic", "полимер", "полипропилен",
-    "пластиковый", "пластиковые", "пластмасс", "пвх", "pvc", "pp",
+    "plastik",
+    "пластик",
+    "plastic",
+    "полимер",
+    "полипропилен",
+    "пластиковый",
+    "пластиковые",
+    "пластмасс",
+    "пвх",
+    "pvc",
+    "pp",
   ];
   const haystack = `${tur} ${urunAdi} ${not}`.toLowerCase();
   return keywords.some((kw) => haystack.includes(kw));
@@ -165,19 +174,40 @@ export async function parseOrderExcel(
 
     // ── Plastik kontrolü ──────────────────────────────────────────
     if (isPlastic(tur, urunAdi, stokNot)) {
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, "Satınalma", miktar, olcu,
-        (() => {
-          // stokNot/not içindeki alım/satın alma eşanlamlılarını filtrele
-          const ALIM_KEYWORDS = ["dış alım", "satın alma", "satınalma", "external", "закупка", "alım"];
-          const extra = (not || stokNot || "").trim();
-          const isRedundant = ALIM_KEYWORDS.some(k => extra.toLowerCase().includes(k));
-          return isRedundant || !extra ? "Внешняя закупка (пластик)." : `Внешняя закупка (пластик). ${extra}`;
-        })(),
-        undefined, undefined,
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          "Satınalma",
+          miktar,
+          olcu,
+          (() => {
+            // stokNot/not içindeki alım/satın alma eşanlamlılarını filtrele
+            const ALIM_KEYWORDS = [
+              "dış alım",
+              "satın alma",
+              "satınalma",
+              "external",
+              "закупка",
+              "alım",
+            ];
+            const extra = (not || stokNot || "").trim();
+            const isRedundant = ALIM_KEYWORDS.some((k) =>
+              extra.toLowerCase().includes(k),
+            );
+            return isRedundant || !extra
+              ? "Внешняя закупка (пластик)."
+              : `Внешняя закупка (пластик). ${extra}`;
+          })(),
+          undefined,
+          undefined,
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`🛒 Plastik ürün → Satınalma: ${urunAdi}`);
       continue;
     }
@@ -195,84 +225,151 @@ export async function parseOrderExcel(
         stokNot || "",
         not || "",
         olcu ? `Размер: ${olcu}` : "",
-      ].filter(Boolean).join(" | ");
+      ]
+        .filter(Boolean)
+        .join(" | ");
 
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, "Karkas Üretimi", miktar, olcu,
-        detay,
-        undefined,
-        boya ? { name: boya } : undefined,
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          "Karkas Üretimi",
+          miktar,
+          olcu,
+          detay,
+          undefined,
+          boya ? { name: boya } : undefined,
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`🔩 Karkas: ${urunAdi}`);
     }
 
     // ── Boyahane ──────────────────────────────────────────────────
     if (!isEmpty(boya)) {
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, "Boyahane", miktar, olcu,
-        `Цвет: ${boya}`,
-        undefined,
-        { name: boya },
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          "Boyahane",
+          miktar,
+          olcu,
+          `Цвет: ${boya}`,
+          undefined,
+          { name: boya },
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`🎨 Boyahane: ${urunAdi} → ${boya}`);
     }
 
     // ── Kumaş (Marina için) ───────────────────────────────────────
     if (!isEmpty(kumas)) {
       const kumasMiktar = kumasMt > 0 ? kumasMt * miktar : 0;
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, "Kumaş", miktar, olcu,
-        `Ткань: ${kumas}${kumasMiktar > 0 ? ` | Итого: ${kumasMiktar} м` : ""}`,
-        { name: kumas, amount: kumasMiktar },
-        undefined,
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          "Kumaş",
+          miktar,
+          olcu,
+          `Ткань: ${kumas}${kumasMiktar > 0 ? ` | Итого: ${kumasMiktar} м` : ""}`,
+          { name: kumas, amount: kumasMiktar },
+          undefined,
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`🧶 Kumaş: ${urunAdi} → ${kumas}`);
     }
 
     // ── Dikişhane ─────────────────────────────────────────────────
     // Kural: dikis sütunu doluysa veya kumaş + dikis birlikte varsa tetiklenir
     if (!isEmpty(dikis)) {
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, "Dikişhane", miktar, olcu,
-        `Шитьё: ${dikis}${ip ? ` | Нить: ${ip}` : ""}`,
-        !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
-        undefined,
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          "Dikişhane",
+          miktar,
+          olcu,
+          `Шитьё: ${dikis}${ip ? ` | Нить: ${ip}` : ""}`,
+          !isEmpty(kumas)
+            ? { name: kumas, amount: kumasMt * miktar }
+            : undefined,
+          undefined,
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`🧵 Dikişhane: ${urunAdi}`);
     }
 
     // ── Döşemehane ────────────────────────────────────────────────
     // Kural: kumaş varsa döşemehane KESİNLİKLE tetiklenir (doseme sütunu boş olsa bile)
     if (!isEmpty(doseme) || !isEmpty(kumas)) {
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, "Döşemehane", miktar, olcu,
-        `Обивка: ${doseme || kumas}${!isEmpty(kumas) ? ` | Ткань: ${kumas}` : ""}`,
-        !isEmpty(kumas) ? { name: kumas, amount: kumasMt * miktar } : undefined,
-        undefined,
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          "Döşemehane",
+          miktar,
+          olcu,
+          `Обивка: ${doseme || kumas}${!isEmpty(kumas) ? ` | Ткань: ${kumas}` : ""}`,
+          !isEmpty(kumas)
+            ? { name: kumas, amount: kumasMt * miktar }
+            : undefined,
+          undefined,
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`🪑 Döşemehane: ${urunAdi}`);
     }
 
     // ── Hiçbir kural tetiklenmediyse genel departmana at ─────────
-    if (!karkasFlag && isEmpty(boya) && isEmpty(kumas) && isEmpty(dikis) && isEmpty(doseme)) {
+    if (
+      !karkasFlag &&
+      isEmpty(boya) &&
+      isEmpty(kumas) &&
+      isEmpty(dikis) &&
+      isEmpty(doseme)
+    ) {
       const dept = departmanHam || "Karkas Üretimi";
-      items.push(makeItem(
-        orderId, itemIndex++, rowNum,
-        urunAdi, kod, dept, miktar, olcu,
-        [stokNot, not].filter(Boolean).join(" | "),
-        undefined, undefined,
-        imgData?.buffer, imgData?.extension,
-      ));
+      items.push(
+        makeItem(
+          orderId,
+          itemIndex++,
+          rowNum,
+          urunAdi,
+          kod,
+          dept,
+          miktar,
+          olcu,
+          [stokNot, not].filter(Boolean).join(" | "),
+          undefined,
+          undefined,
+          imgData?.buffer,
+          imgData?.extension,
+        ),
+      );
       logger.info(`📦 Genel dept (${dept}): ${urunAdi}`);
     }
   }
@@ -294,7 +391,10 @@ export async function parseOrderExcel(
   };
 
   logger.info(
-    { itemCount: items.length, depts: [...new Set(items.map((i) => i.department))] },
+    {
+      itemCount: items.length,
+      depts: [...new Set(items.map((i) => i.department))],
+    },
     "✅ Sabit parser tamamlandı",
   );
 
@@ -322,7 +422,9 @@ function makeItem(
     product: urunAdi + (kod ? ` (${kod})` : ""),
     department,
     quantity,
-    details: [details, olcu ? `Размер: ${olcu}` : ""].filter(Boolean).join(" | "),
+    details: [details, olcu ? `Размер: ${olcu}` : ""]
+      .filter(Boolean)
+      .join(" | "),
     source: department === "Satınalma" ? "External" : "Production",
     status: "bekliyor",
     rowIndex,

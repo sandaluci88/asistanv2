@@ -497,7 +497,8 @@ export class CronService {
       now.setHours(0, 0, 0, 0);
 
       for (const order of orders) {
-        if (order.status === "archived" || order.status === "completed") continue;
+        if (order.status === "archived" || order.status === "completed")
+          continue;
         if (!order.deliveryDate) continue;
 
         // Teslim tarihini ayrıştır (DD.MM.YYYY veya YYYY-MM-DD veya serbest metin)
@@ -512,7 +513,11 @@ export class CronService {
             parseInt(dmyMatch[1]),
           );
         } else if (isoMatch) {
-          delivery = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+          delivery = new Date(
+            parseInt(isoMatch[1]),
+            parseInt(isoMatch[2]) - 1,
+            parseInt(isoMatch[3]),
+          );
         }
 
         if (!delivery || isNaN(delivery.getTime())) continue;
@@ -533,7 +538,9 @@ export class CronService {
           await this.bot.api.sendMessage(this.targetChatId, msg, {
             parse_mode: "HTML",
           });
-          console.log(`🔔 Teslim tarihi yaklaşıyor: ${order.orderNumber} (${order.customerName}) — ${daysLeft} gün kaldı`);
+          console.log(
+            `🔔 Teslim tarihi yaklaşıyor: ${order.orderNumber} (${order.customerName}) — ${daysLeft} gün kaldı`,
+          );
         }
       }
     } catch (error) {
