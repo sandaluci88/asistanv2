@@ -281,9 +281,22 @@ export class StaffService {
   }
 
   public isBoss(telegramId: number): boolean {
-    // 1. .env'deki TELEGRAM_BOSS_ID kontrolü (En güvenli yöntem)
-    const bossId = (process.env.TELEGRAM_BOSS_ID || "").trim();
-    if (bossId && telegramId.toString().trim() === bossId) {
+    const bossIdRaw = (process.env.TELEGRAM_BOSS_ID || "").trim();
+    // Virgül ile ayrılmış birden fazla ID'yi destekle (Örn: "ID1,ID2" veya "ID1")
+    const bossIds = bossIdRaw
+      .split(",")
+      .map((id) => id.trim().replace(/['"]/g, ""))
+      .filter((id) => id !== "");
+
+    const isMatch = bossIds.includes(telegramId.toString());
+
+    if (!isMatch) {
+      if (bossIdRaw) {
+        console.log(
+          `🔍 [isBoss Check] User: ${telegramId}, Config Boss IDs: ${JSON.stringify(bossIds)} - Match: ${isMatch}`,
+        );
+      }
+    } else {
       return true;
     }
 

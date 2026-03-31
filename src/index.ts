@@ -201,20 +201,23 @@ bot.use(async (ctx, next) => {
 
   // Yetkisiz erişim denemesi
   if (ctx.chat?.type === "private") {
-    // Telefon numarası ile eşleşen bir pending kayıt var mı kontrol et?
-    // Not: Middleware'de telefon numarası henüz yok, o yüzden genel bir davet gönderiyoruz.
+    // Dil belirleme - Guest için varsayılan olarak TR deneyelim veya ctx.from?.language_code'u göz önüne alalım.
+    // Şirket sahibi Türk olduğu için ve genel bir selamlama olduğu için TR/RU ikisini de içerebilir veya auto-detect.
+    const userLangCode = ctx.from?.language_code === "ru" ? "ru" : "tr";
+    const welcomeMsg = t("welcome_guest", userLangCode, {
+      id: userId.toString(),
+    });
+    const btnLabel = t("btn_share_phone", userLangCode);
+
     const keyboard = new Keyboard()
-      .requestContact("📱 Telefon Numaranı Paylaş")
+      .requestContact(btnLabel)
       .oneTime()
       .resized();
 
-    await ctx.reply(
-      "Merhaba! Ben Ayça. 🙋‍♀️ Sandaluci üretim asistanıyım.\n\nSeni personel listemde bulamadım. Eğer ekibe yeni katıldıysan, kaydını tamamlamak için lütfen aşağıdaki butona basarak telefon numaranı paylaşır mısın?",
-      {
-        parse_mode: "Markdown",
-        reply_markup: keyboard,
-      },
-    );
+    await ctx.reply(welcomeMsg, {
+      parse_mode: "Markdown",
+      reply_markup: keyboard,
+    });
   }
 });
 

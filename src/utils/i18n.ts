@@ -20,8 +20,12 @@ const translations: Record<string, Record<Language, string>> = {
     ru: "Здравствуйте, {name}! Я Айча. 👋\n\nЯ здесь, чтобы помочь вам в отделе *{department}*.\n\nДоступные команды:\n/durum - Статус производства\n/start - Меню помощи",
   },
   welcome_guest: {
-    tr: "Merhaba! Ben Ayça, Sandaluci Yönetici Asistanıyım. 🙋‍♀️\n\nŞu an sadece kayıtlı personele hizmet verebiliyorum. Lütfen Barış Bey ile iletişime geçerek kaydınızı yaptırın.",
-    ru: "Здравствуйте! Я Айча, ассистент управления Sandaluci. 🙋‍♀️\n\nВ данный момент я обслуживаю только зарегистрированный персонал. Пожалуйста, свяжитесь с руководством для регистрации.",
+    tr: "Merhaba! Ben Ayça, Sandaluci Yönetici Asistanıyım. 🙋‍♀️\n\nSandaluci üretim sistemine erişmek için kayıt olmanız gerekmektedir. Eğer personel iseniz, lütfen aşağıdaki '📱 Telefon Numaramı Paylaş' butonuna tıklayarak kaydınızı tamamlayın.\n\n🆔 Telegram ID'niz: `{id}`",
+    ru: "Здравствуйте! Я Айча, ассистент управления Sandaluci. 🙋‍♀️\n\nДля доступа к системе производства Sandaluci вам необходимо зарегистрироваться. Если вы являетесь сотрудником, пожалуйста, нажмите кнопку '📱 Поделиться номером телефона' ниже, чтобы завершить регистрацию.\n\n🆔 Ваш Telegram ID: `{id}`",
+  },
+  registration_invite: {
+    tr: "Sizi personel listemizde bulamadık. 🧐\n\nEğer ekibe yeni katıldıysanız veya telefon numaranız güncel değilse, lütfen Barış Bey ile iletişime geçin.",
+    ru: "Мы не нашли вас в нашем списке персонала. 🧐\n\nЕсли вы новичок в команде или ваш номер телефона не актуален, пожалуйста, свяжитесь с руководством для обновления данных.",
   },
   access_denied: {
     tr: "🔒 Bu komuta erişim yetkiniz bulunmamaktadır.",
@@ -112,6 +116,10 @@ const translations: Record<string, Record<Language, string>> = {
   btn_archive: {
     tr: "🏁 Bitenleri Arşivle",
     ru: "🏁 Архивировать",
+  },
+  btn_share_phone: {
+    tr: "📱 Telefon Numaramı Paylaş",
+    ru: "📱 Поделиться номером телефона",
   },
 
   // === Bildirimler (Personel) ===
