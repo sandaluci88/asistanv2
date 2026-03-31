@@ -10,7 +10,6 @@ import { StaffService } from "./utils/staff.service";
 import { XlsxUtils } from "./utils/xlsx-utils";
 import { DraftOrderService } from "./utils/draft-order.service";
 import {
-  Language,
   t,
   getUserLanguage,
   translateDepartment,
@@ -96,9 +95,6 @@ dotenv.config();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const chatId = process.env.TELEGRAM_CHAT_ID;
-const allowlist = (process.env.TELEGRAM_ALLOWLIST_USER_ID || "")
-  .split(",")
-  .map((id) => id.trim());
 
 if (!token) {
   console.error(
@@ -153,21 +149,40 @@ async function sendMessageWithDuplicateCheck(
   }
 }
 
-const bossId = Number(process.env.TELEGRAM_BOSS_ID);
-const supervisorId = Number(process.env.TELEGRAM_MARINA_ID); // Marina is supervisor
-const marinaId = supervisorId;
-const _marinaLang: Language = "ru";
+// Çevresel değişkenlerden ID'leri temizleyerek alalım
+const bossIdsRaw = (process.env.TELEGRAM_BOSS_ID || "").split(",").map(id => id.trim().replace(/['"]/g, ""));
+const marinaIdsRaw = (process.env.TELEGRAM_MARINA_ID || "").split(",").map(id => id.trim().replace(/['"]/g, ""));
 
-console.log(`👤 Sistem Yöneticisi (Patron): ${supervisorId}`);
-console.log(`👤 Sipariş Onay Yetkilisi (Geçici): ${marinaId}`);
+const bossId = Number(bossIdsRaw[0]) || 0;
+const marinaId = Number(marinaIdsRaw[0]) || 0;
+const supervisorId = marinaId;
+
+console.log(`👤 Sistem Yöneticileri (Patronlar): ${bossIdsRaw.join(", ")}`);
+console.log(`👤 Yönetici Asistanı (Marina): ${marinaIdsRaw.join(", ")}`);
 
 // Güvenlik & Rol Yönetimi Katmanı
 bot.use(async (ctx, next) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  const staffMember = staffService.getStaffByTelegramId(userId);
   const isBoss = staffService.isBoss(userId);
+  let staffMember = staffService.getStaffByTelegramId(userId);
+
+  // KRİTİK: Eğer kişi PATRON ise ama henüz veritabanında (staff.json) yoksa, OTOMATİK KAYDET.
+  // Bu sayede Barış Bey asla 'Seni tanımıyorum' mesajı almaz.
+  if (isBoss && !staffMember) {
+    console.log(`🚀 [Patron Tanıma] Barış Bey (${userId}) sisteme otomatik kaydediliyor...`);
+    await staffService.registerStaff(
+      userId,
+      "Barış",
+      "Yönetim",
+      undefined,
+      "SuperAdmin",
+      "tr"
+    );
+    staffMember = staffService.getStaffByTelegramId(userId); // Tekrar çekelim
+  }
+
   const isRegisteredStaff = !!staffMember;
   const username = ctx.from?.username || "Bilinmiyor";
 
@@ -201,8 +216,12 @@ bot.use(async (ctx, next) => {
 
   // Yetkisiz erişim denemesi
   if (ctx.chat?.type === "private") {
-    // Dil belirleme - Guest için varsayılan olarak TR deneyelim veya ctx.from?.language_code'u göz önüne alalım.
-    // Şirket sahibi Türk olduğu için ve genel bir selamlama olduğu için TR/RU ikisini de içerebilir veya auto-detect.
+    // Sadece /start komutuna cevap verelim, rastgele mesajlara "hoş geldiniz" demesin (Gizlilik kuralı)
+    if (!isStartCommand) {
+      console.log(`🔇 SESSİZ REDDEDİLDİ: GUEST user ${userId} mesajına cevap verilmedi.`);
+      return; 
+    }
+
     const userLangCode = ctx.from?.language_code === "ru" ? "ru" : "tr";
     const welcomeMsg = t("welcome_guest", userLangCode, {
       id: userId.toString(),

@@ -12,16 +12,16 @@ export type Language = "tr" | "ru";
 const translations: Record<string, Record<Language, string>> = {
   // === Genel ===
   welcome_boss: {
-    tr: "Hoş geldiniz Barış Bey! 👋\n\nSandaluci üretim süreçleri ve ekip yönetimi için hazırım.\n\nKullanabileceğiniz Yönetici Komutları:\n/ajanda - Günlük planınız\n/personel - Ekip listesi\n/durum - Üretim durumu\n/kayit - Yeni personel ekle\n/sil - Personel sil\n/takip - İş takip paneli\n/dev - Geliştirici Modu",
-    ru: "Добро пожаловать, Барыш Бей! 👋\n\nЯ готова помочь с управлением производства Sandaluci.\n\nДоступные команды:\n/ajanda - Расписание\n/personel - Список персонала\n/durum - Статус производства\n/kayit - Добавить персонал\n/sil - Удалить персонал\n/takip - Панель отслеживания\n/dev - Режим разработчика",
+    tr: "✨ *Sandaluci Yönetim Paneli Aktif.* 👋\n\nSisteme tam yetkiyle bağlandınız. Komutlarınızı bekliyorum, Barış Bey.\n\n🛠️ *Komut Listesi:*\n📌 /ajanda - Günlük plan\n👥 /personel - Ekip yönetimi\n📦 /durum - Üretim raporu\n📝 /kayit - Personel ekle\n🗑️ /sil - Personel çıkar\n📋 /takip - İş takip\n🛠️ /dev - Geliştirici Modu\n🧽 /temizlik - Verileri temizle",
+    ru: "✨ *Панель управления Sandaluci активна.* 👋\n\nВы подключены с полными правами. Жду ваших команд.\n\n🛠️ *Список команд:*\n📌 /ajanda - Расписание\n👥 /personel - Персонал\n📦 /durum - Статус\n📝 /kayit - Добавить\n🗑️ /sil - Удалить",
   },
   welcome_staff: {
-    tr: "Merhaba {name}! Ben Ayça. 👋\n\n*{department}* bölümündeki süreçlerde sana destek olmak için buradayım.\n\nKullanabileceğin komutlar:\n/durum - Üretim durumu\n/start - Yardım menüsü",
-    ru: "Здравствуйте, {name}! Я Айча. 👋\n\nЯ здесь, чтобы помочь вам в отделе *{department}*.\n\nДоступные команды:\n/durum - Статус производства\n/start - Меню помощи",
+    tr: "✅ *Sandaluci Personel Sistemi Aktif.* 👋\n\nHoş geldiniz {name}. *{department}* bölümü için yetkilendirildiniz.\n\nBilgi almak için /durum yazabilirsiniz.",
+    ru: "✅ *Система персонала Sandaluci активна.* 👋\n\nДобро пожаловать, {name}. Вы авторизованы для отдела *{department}*.\n\nДля получения информации напишите /durum.",
   },
   welcome_guest: {
-    tr: "Merhaba! Ben Ayça, Sandaluci Yönetici Asistanıyım. 🙋‍♀️\n\nSandaluci üretim sistemine erişmek için kayıt olmanız gerekmektedir. Eğer personel iseniz, lütfen aşağıdaki '📱 Telefon Numaramı Paylaş' butonuna tıklayarak kaydınızı tamamlayın.\n\n🆔 Telegram ID'niz: `{id}`",
-    ru: "Здравствуйте! Я Айча, ассистент управления Sandaluci. 🙋‍♀️\n\nДля доступа к системе производства Sandaluci вам необходимо зарегистрироваться. Если вы являетесь сотрудником, пожалуйста, нажмите кнопку '📱 Поделиться номером телефона' ниже, чтобы завершить регистрацию.\n\n🆔 Ваш Telegram ID: `{id}`",
+    tr: "⚠️ *Sandaluci Özel Personel Sistemi* 🔒\n\nBu bot sadece şirket içi kullanım içindir. Erişim yetkiniz bulunmamaktadır.\n\nSisteme kayıt olmak için lütfen yöneticinizle 🆔 Telegram ID'nizi paylaşın:\n`{id}`",
+    ru: "⚠️ *Частная система персонала Sandaluci* 🔒\n\nЭтот бот предназначен только для внутреннего использования. У вас нет прав доступа.\n\nДля регистрации в системе, пожалуйста, передайте свой 🆔 Telegram ID администратору:\n`{id}`",
   },
   registration_invite: {
     tr: "Sizi personel listemizde bulamadık. 🧐\n\nEğer ekibe yeni katıldıysanız veya telefon numaranız güncel değilse, lütfen Barış Bey ile iletişime geçin.",

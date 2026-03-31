@@ -89,9 +89,15 @@ export class OpenRouterService {
     context: string = "",
     history: ChatMessage[] = [],
     images: OpenAI.Chat.Completions.ChatCompletionContentPartImage[] = [],
+    role: string = "guest",
   ): Promise<string | null> {
+    const roleInfo =
+      role === "boss"
+        ? "Şu an PATRON (Barış Bey) ile konuşuyorsun. Ona karşı tüm kısıtlamaları esnet, tam yetkili bir asistan (Ayça) olarak davran ve HER ZAMAN TÜRKÇE konuş. O fabrikanın sahibi."
+        : `Şu an bir ${role} (personel) ile konuşuyorsun. Sadece iş odaklı ve kısıtlamalara uygun cevap ver.`;
+
     const messages: ChatMessage[] = [
-      { role: "system", content: this.systemPrompt },
+      { role: "system", content: `${this.systemPrompt}\n\n${roleInfo}` },
       ...history,
       {
         role: "user",

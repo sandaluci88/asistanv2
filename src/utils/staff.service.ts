@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { SupabaseService } from "./supabase.service";
+import { Language } from "./i18n";
 
 export interface Staff {
   id?: string;
@@ -9,7 +10,7 @@ export interface Staff {
   department: string;
   role: string;
   phone?: string;
-  language: "tr" | "ru";
+  language: Language;
   isMarina?: boolean;
 }
 
@@ -173,14 +174,16 @@ export class StaffService {
     name: string,
     department: string,
     phone?: string,
+    role: string = "Personnel",
+    language: Language = "ru",
   ) {
     const staffData = {
       telegramId,
       name,
       department,
       phone,
-      role: "Personnel",
-      language: "ru" as const,
+      role,
+      language,
     };
 
     try {
@@ -290,14 +293,13 @@ export class StaffService {
 
     const isMatch = bossIds.includes(telegramId.toString());
 
-    if (!isMatch) {
-      if (bossIdRaw) {
-        console.log(
-          `🔍 [isBoss Check] User: ${telegramId}, Config Boss IDs: ${JSON.stringify(bossIds)} - Match: ${isMatch}`,
-        );
-      }
-    } else {
+    if (isMatch) {
+      console.log(`✅ [isBoss Match] User: ${telegramId} is recognized as BOSS`);
       return true;
+    } else if (bossIdRaw) {
+      console.log(
+        `🔍 [isBoss Non-Match] User: ${telegramId}, Config Boss IDs: ${JSON.stringify(bossIds)}`,
+      );
     }
 
     // 2. Staff listesindeki role kontrolü (Yedek yöntem)

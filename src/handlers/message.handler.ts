@@ -88,7 +88,7 @@ export class MessageHandler {
     }
 
     // Genel Mesaj İşleme (LLM + RAG simülasyonu)
-    await this.handleGeneralMessage(ctx, originalText, isBoss);
+    await this.handleGeneralMessage(ctx, originalText, isBoss, role);
   }
 
   public async handleCallback(ctx: Context) {
@@ -234,6 +234,7 @@ export class MessageHandler {
     ctx: Context,
     text: string,
     isBoss: boolean,
+    role: string,
   ) {
     const lowerText = text.toLowerCase();
 
@@ -280,15 +281,19 @@ export class MessageHandler {
       return;
     }
 
-    // Hatırlatıcı / Zamanlı Görev Tespiti
+    // Hatırlatıcı / Zamanlı Görev Tespiti (Geliştirilmiş regex ve Türkçe karakter desteği)
     const reminderKeywords = [
       "hatırlat",
+      "hatirlat",
       "zamanında",
+      "zamaninda",
       "alarm kur",
       "haber ver",
       "sonra bildir",
     ];
-    const isReminderRequest = reminderKeywords.some((kw) => text.includes(kw));
+    const isReminderRequest = reminderKeywords.some((kw) =>
+      lowerText.includes(kw),
+    );
 
     if (isReminderRequest) {
       if (!isBoss) {
@@ -314,10 +319,10 @@ export class MessageHandler {
       "liste",
     ];
     const isStatusQuery =
-      (text.includes("sipariş") ||
-        text.includes("muşteri") ||
-        text.includes("müşteri")) &&
-      statusKeywords.some((kw) => text.includes(kw));
+      (lowerText.includes("sipariş") ||
+        lowerText.includes("muşteri") ||
+        lowerText.includes("müşteri")) &&
+      statusKeywords.some((kw) => lowerText.includes(kw));
 
     if (isStatusQuery && isBoss) {
       await this.handleOrderStatusQuery(ctx, text, isBoss);
@@ -339,11 +344,13 @@ export class MessageHandler {
     // 2. Add current user message to memory
     await memoryService.saveMessage(ctx.chat?.id || "default", "user", text);
 
-    // 3. Send to LLM with history
+    // 3. Send to LLM with history and ROLE
     const response = await this.llmService.chat(
       text,
       context,
       formattedHistory,
+      [],
+      role,
     );
 
     // 4. Save AI response to memory
