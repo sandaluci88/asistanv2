@@ -9,11 +9,7 @@ import { OrderService } from "./utils/order.service";
 import { StaffService } from "./utils/staff.service";
 import { XlsxUtils } from "./utils/xlsx-utils";
 import { DraftOrderService } from "./utils/draft-order.service";
-import {
-  t,
-  getUserLanguage,
-  translateDepartment,
-} from "./utils/i18n";
+import { t, getUserLanguage, translateDepartment } from "./utils/i18n";
 import { DoctorService } from "./utils/doctor.service";
 import { memoryService } from "./utils/memory.service";
 import { logger } from "./utils/logger";
@@ -50,13 +46,11 @@ function buildDistributionSummary(order: any): string {
   for (const item of order.items) {
     const d = item.department as string;
     if (!deptMap.has(d)) deptMap.set(d, []);
-    deptMap
-      .get(d)!
-      .push({
-        product: item.product,
-        qty: item.quantity,
-        details: item.details || "",
-      });
+    deptMap.get(d)!.push({
+      product: item.product,
+      qty: item.quantity,
+      details: item.details || "",
+    });
   }
   const deptEmoji: Record<string, string> = {
     "Karkas Üretimi": "🔩",
@@ -109,15 +103,23 @@ const bot = new Bot(token);
 // --- Hata Yönetimi (Global) ---
 bot.catch((err) => {
   const ctx = err.ctx;
-  logger.error({ 
-    error: err.error, 
-    update: ctx.update,
-    userId: ctx.from?.id 
-  }, "❌ Bot Hatası Yakalandı!");
+  logger.error(
+    {
+      error: err.error,
+      update: ctx.update,
+      userId: ctx.from?.id,
+    },
+    "❌ Bot Hatası Yakalandı!",
+  );
 
   // Kullanıcıya bilgi ver (isteğe bağlı)
   if (ctx.from) {
-    bot.api.sendMessage(ctx.from.id, "⚠️ Üzgünüm, bir bağlantı hatası oluştu. Lütfen tekrar deneyin.").catch(() => {});
+    bot.api
+      .sendMessage(
+        ctx.from.id,
+        "⚠️ Üzgünüm, bir bağlantı hatası oluştu. Lütfen tekrar deneyin.",
+      )
+      .catch(() => {});
   }
 });
 
@@ -166,12 +168,16 @@ async function sendMessageWithDuplicateCheck(
 }
 
 // Çevresel değişkenlerden ID'leri temizleyerek alalım
-const bossIdsRaw = (process.env.TELEGRAM_BOSS_ID || "").split(",").map(id => id.trim().replace(/['"]/g, ""));
-const marinaIdsRaw = (process.env.TELEGRAM_MARINA_ID || "").split(",").map(id => id.trim().replace(/['"]/g, ""));
+const bossIdsRaw = (process.env.TELEGRAM_BOSS_ID || "")
+  .split(",")
+  .map((id) => id.trim().replace(/['"]/g, ""));
+const marinaIdsRaw = (process.env.TELEGRAM_MARINA_ID || "")
+  .split(",")
+  .map((id) => id.trim().replace(/['"]/g, ""));
 
 const bossId = Number(bossIdsRaw[0]) || 0;
 const marinaId = Number(marinaIdsRaw[0]) || 0;
-const supervisorId = marinaId;
+const supervisorId = marinaId || bossId;
 
 console.log(`👤 Sistem Yöneticileri (Patronlar): ${bossIdsRaw.join(", ")}`);
 console.log(`👤 Yönetici Asistanı (Marina): ${marinaIdsRaw.join(", ")}`);
@@ -188,18 +194,23 @@ bot.use(async (ctx, next) => {
   // Bu sayede Barış Bey asla 'Seni tanımıyorum' mesajı almaz.
   if (isBoss && !staffMember) {
     try {
-      console.log(`🚀 [Patron Tanıma] Barış Bey (${userId}) sisteme otomatik kaydediliyor...`);
+      console.log(
+        `🚀 [Patron Tanıma] Barış Bey (${userId}) sisteme otomatik kaydediliyor...`,
+      );
       await staffService.registerStaff(
         userId,
         "Barış",
         "Yönetim",
         undefined,
         "SuperAdmin",
-        "tr"
+        "tr",
       );
       staffMember = staffService.getStaffByTelegramId(userId); // Tekrar çekelim
     } catch (regErr) {
-      console.error("⚠️ Patron otomatik kaydedilemedi, yerel veriyle devam ediliyor:", regErr);
+      console.error(
+        "⚠️ Patron otomatik kaydedilemedi, yerel veriyle devam ediliyor:",
+        regErr,
+      );
     }
   }
 
@@ -233,7 +244,10 @@ bot.use(async (ctx, next) => {
   if (isSpecialPhrase && isBoss) {
     if (!staffService.isBossRecognizedInMemory()) {
       await staffService.setBossRecognizedInMemory();
-      return ctx.reply(`✅ **Sistem Sizi Tanıdı Barış Bey.**\n\n📌 **ID:** \`${userId}\`\n🛡️ **Rol:** \`SuperAdmin\`\n🌐 **Dil:** \`Türkçe (tr)\`\n\nBu tanışmayı hafızama kaydettim (memory.md). Sandaluci personeli artık otomatik selamlanmayacak, sadece size özel bir sistem kuruldu.`, { parse_mode: "Markdown" });
+      return ctx.reply(
+        `✅ **Sistem Sizi Tanıdı Barış Bey.**\n\n📌 **ID:** \`${userId}\`\n🛡️ **Rol:** \`SuperAdmin\`\n🌐 **Dil:** \`Türkçe (tr)\`\n\nBu tanışmayı hafızama kaydettim (memory.md). Sandaluci personeli artık otomatik selamlanmayacak, sadece size özel bir sistem kuruldu.`,
+        { parse_mode: "Markdown" },
+      );
     } else {
       return ctx.reply("Buyurun Barış Bey, sizi dinliyorum. 👋");
     }
@@ -252,8 +266,10 @@ bot.use(async (ctx, next) => {
   if (ctx.chat?.type === "private") {
     // Sadece /start komutuna cevap verelim, rastgele mesajlara "hoş geldiniz" demesin (Gizlilik kuralı)
     if (!isStartCommand) {
-      console.log(`🔇 SESSİZ REDDEDİLDİ: GUEST user ${userId} mesajına cevap verilmedi.`);
-      return; 
+      console.log(
+        `🔇 SESSİZ REDDEDİLDİ: GUEST user ${userId} mesajına cevap verilmedi.`,
+      );
+      return;
     }
 
     const userLangCode = ctx.from?.language_code === "ru" ? "ru" : "tr";
@@ -900,7 +916,6 @@ if (process.env.GMAIL_ENABLED !== "false") {
                 isManualDept(i.department),
               );
 
-
               // PDF Önizleme Resmi Oluşturma (Opsiyonel)
               let pdfPreviewImg: Buffer | undefined;
               try {
@@ -1130,7 +1145,9 @@ if (botEnabled) {
         cronService.init();
         console.log("⏰ Cron Service initialized and started.");
       } else {
-        console.warn("⚠️ Cron Service skipped: TELEGRAM_MARINA_ID (supervisorId) missing.");
+        console.warn(
+          "⚠️ Cron Service skipped: TELEGRAM_MARINA_ID and TELEGRAM_BOSS_ID (supervisorId) missing.",
+        );
       }
     } catch (cronErr) {
       console.error("❌ Cron Service start error:", cronErr);
