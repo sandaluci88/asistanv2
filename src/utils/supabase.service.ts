@@ -44,6 +44,16 @@ export class SupabaseService {
     return data;
   }
 
+  async getActiveOrders() {
+    const { data, error } = await this.client
+      .from("orders")
+      .select("*, order_items(*)")
+      .neq("status", "archived");
+
+    if (error) throw error;
+    return data;
+  }
+
   // --- Order Items ---
   async upsertOrderItem(item: any, orderId: string, index?: number) {
     // ID yoksa orderId_index formatında üret

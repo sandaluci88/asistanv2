@@ -1,27 +1,17 @@
 [
   {
     "id": "f0000000-0000-0000-0000-000000000001",
-    "telegramId": 1030595483,
-    "name": "Marina (Genel Koordinatör)",
-    "department": "Yönetim",
+    "telegramId": 6030287709,
+    "name": "Marina",
+    "department": "Satınalma",
     "role": "Coordinator",
     "phone": null,
     "language": "ru",
     "isMarina": true
   },
   {
-    "id": "f0000000-0000-0000-0000-000000000000",
-    "telegramId": 6030287709,
-    "name": "Barış Bey",
-    "department": "Yönetim",
-    "role": "SuperAdmin",
-    "phone": null,
-    "language": "tr",
-    "isMarina": false
-  },
-  {
     "id": "f0000000-0000-0000-0000-000000000002",
-    "telegramId": null,
+    "telegramId": 6030287709,
     "name": "Dikişhane Ustası",
     "department": "Dikişhane",
     "role": "Personnel",
@@ -31,7 +21,7 @@
   },
   {
     "id": "f0000000-0000-0000-0000-000000000003",
-    "telegramId": null,
+    "telegramId": 6030287709,
     "name": "Döşemehane Ustası",
     "department": "Döşemehane",
     "role": "Personnel",
@@ -41,9 +31,9 @@
   },
   {
     "id": "f0000000-0000-0000-0000-000000000004",
-    "telegramId": null,
-    "name": "Karkas Departmanı",
-    "department": "Karkas",
+    "telegramId": 6030287709,
+    "name": "Karkas Ustası",
+    "department": "Karkas Üretimi",
     "role": "Personnel",
     "phone": null,
     "language": "ru",
@@ -51,9 +41,9 @@
   },
   {
     "id": "f0000000-0000-0000-0000-000000000005",
-    "telegramId": null,
-    "name": "Metal Departmanı",
-    "department": "Metal",
+    "telegramId": 6030287709,
+    "name": "Metal Ustası",
+    "department": "Metal Üretimi",
     "role": "Personnel",
     "phone": null,
     "language": "ru",
@@ -61,12 +51,22 @@
   },
   {
     "id": "f0000000-0000-0000-0000-000000000006",
-    "telegramId": null,
-    "name": "Boya Departmanı",
-    "department": "Boya",
+    "telegramId": 6030287709,
+    "name": "Boya Ustası",
+    "department": "Boyahane",
     "role": "Personnel",
     "phone": null,
     "language": "ru",
+    "isMarina": false
+  },
+  {
+    "id": "6f5ca17e-d6fd-41c7-92d9-9d87d5aa2b65",
+    "telegramId": 6030287709,
+    "name": "Barış",
+    "department": "Yönetim",
+    "role": "SuperAdmin",
+    "phone": null,
+    "language": "tr",
     "isMarina": false
   }
 ]

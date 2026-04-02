@@ -121,7 +121,7 @@ export class OpenRouterService {
               ).trim(),
               messages,
             },
-            { timeout: 60000 },
+            { timeout: 90000 },
           ),
         3,
         1000,

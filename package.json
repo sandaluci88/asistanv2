@@ -10,7 +10,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "npx prettier --write src/"
+    "format": "npx prettier --write src/",
+    "test": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
@@ -43,10 +44,12 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
+    "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^10.0.3",
     "eslint-plugin-unused-imports": "^4.4.1",
     "prettier": "^3.5.2",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.2"
   }
 }

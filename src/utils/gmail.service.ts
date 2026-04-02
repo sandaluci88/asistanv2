@@ -23,24 +23,9 @@ export interface GmailMessage {
 
 export class GmailService {
   private static instance: GmailService;
-  private client: ImapFlow;
   private transporter: nodemailer.Transporter;
 
   private constructor() {
-    this.client = new ImapFlow({
-      host: "imap.gmail.com",
-      port: 993,
-      secure: true,
-      auth: {
-        user: process.env.GMAIL_USER || "",
-        pass: (process.env.GMAIL_PASS || "").replace(/\s/g, ""),
-      },
-      logger: false,
-      tls: {
-        rejectUnauthorized: true,
-      },
-    });
-
     this.transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -83,55 +68,10 @@ export class GmailService {
   }
 
   /**
-   * Gmail bağlantısını retry mekanizması ile gerçekleştirir.
+   * Yeni bir ImapFlow istemcisi oluşturur.
    */
-  private async connectWithRetry(
-    client: ImapFlow,
-    retries: number = 3,
-  ): Promise<void> {
-    for (let i = 0; i < retries; i++) {
-      // Check if already authenticated
-      if (client.authenticated) {
-        logger.info("📡 IMAP: Client already authenticated, skipping connect.");
-        return;
-      }
-      try {
-        await client.connect();
-        logger.info("📡 IMAP: Connected successfully.");
-        return;
-      } catch (err: any) {
-        const errorMsg = err.message || "";
-
-        // If the error says we are already connected (ready state), we are good to go
-        if (errorMsg.includes("ready state")) {
-          logger.info(
-            "📡 IMAP: Client was already in ready state. Continuing...",
-          );
-          return;
-        }
-
-        if (i === retries - 1) {
-          logger.error({ err }, "❌ IMAP: Max retries reached for connection.");
-          throw err;
-        }
-
-        const delay = Math.pow(2, i) * 1000;
-        logger.warn(
-          `⚠️ IMAP bağlantı hatası (${errorMsg}), ${delay}ms sonra tekrar deneniyor... (${i + 1}/${retries})`,
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  /**
-   * Okunmamış son mesajları getirir ve işler, ardından okundu olarak işaretler.
-   */
-  async processUnreadMessages(
-    limit: number = 5,
-    processor: (msg: GmailMessage) => Promise<void>,
-  ): Promise<void> {
-    const client = new ImapFlow({
+  private createClient(): ImapFlow {
+    return new ImapFlow({
       host: "imap.gmail.com",
       port: 993,
       secure: true,
@@ -141,34 +81,42 @@ export class GmailService {
       },
       logger: false,
       tls: {
-        rejectUnauthorized: true,
+        rejectUnauthorized: false,
       },
     });
+  }
+
+  /**
+   * Okunmamış son mesajları getirir ve işler, ardından okundu olarak işaretler.
+   */
+  async processUnreadMessages(
+    limit: number = 5,
+    processor: (msg: GmailMessage) => Promise<void>,
+  ): Promise<void> {
+    const client = this.createClient();
+    let isConnected = false;
 
     try {
-      await this.connectWithRetry(client);
-      const lock = await client.getMailboxLock("INBOX");
+      logger.info("📡 IMAP: Bağlantı kuruluyor...");
+      await client.connect();
+      isConnected = true;
+      logger.info("📡 IMAP: Bağlandı.");
 
+      const lock = await client.getMailboxLock("INBOX");
       try {
         logger.info("📡 IMAP: INBOX aranıyor (seen: false)...");
-        const searchResult = await client.search(
-          { seen: false },
-          { uid: true },
-        );
-        logger.info({ searchResult }, `🔍 IMAP Arama Sonucu`);
+        const searchResult = await client.search({ seen: false }, { uid: true });
         const count = Array.isArray(searchResult) ? searchResult.length : 0;
         logger.info(`🔍 IMAP: ${count} adet okunmamış mesaj bulundu.`);
 
         if (Array.isArray(searchResult) && searchResult.length > 0) {
-          const lastIds = searchResult.slice(-limit); // .reverse() removed to process in chronological order (oldest first)
+          const lastIds = searchResult.slice(-limit);
 
           for (const uid of lastIds) {
             logger.info(`📧 Mesaj UID ${uid} getiriliyor...`);
             const raw = (await client.fetchOne(
               uid.toString(),
-              {
-                source: true,
-              },
+              { source: true },
               { uid: true },
             )) as FetchMessageObject;
 
@@ -185,10 +133,7 @@ export class GmailService {
 
               let content = parsed.text || "";
               if (!content && parsed.html) {
-                logger.info(
-                  `📝 UID ${uid} metin içeriği yok, HTML fallback kullanılıyor.`,
-                );
-                content = parsed.html.replace(/<[^>]*>?/gm, " "); // Simple HTML to text
+                content = parsed.html.replace(/<[^>]*>?/gm, " ");
               }
 
               const msg: GmailMessage = {
@@ -200,31 +145,17 @@ export class GmailService {
                 attachments: attachments,
               };
 
-              logger.info(
-                `📦 UID ${uid} işlenmeye hazır. Konu: ${msg.subject}`,
-              );
-
               try {
-                // İşlemi yap
                 await processor(msg);
+                await client.messageFlagsAdd(uid.toString(), ["\\Seen"], {
+                  uid: true,
+                });
+                logger.info(`✅ Message ${uid} işlendi ve okundu işaretlendi.`);
               } catch (procError) {
                 logger.error(
                   { err: procError },
-                  `Error while processing email ${uid}`,
+                  `❌ UID ${uid} işleme hatası`,
                 );
-              } finally {
-                // Başarıyla işlense de hata alsa da okundu olarak işaretle (sonsuz döngüyü önler)
-                try {
-                  await client.messageFlagsAdd(uid.toString(), ["\\Seen"], {
-                    uid: true,
-                  });
-                  logger.info(`Message ${uid} marked as read.`);
-                } catch (flagError) {
-                  logger.error(
-                    { err: flagError },
-                    `Failed to mark message ${uid} as read`,
-                  );
-                }
               }
             }
           }
@@ -232,38 +163,33 @@ export class GmailService {
       } finally {
         lock.release();
       }
-
-      await client.logout();
     } catch (error) {
-      logger.error({ err: error }, "Gmail IMAP error during processing");
+      logger.error({ err: error }, "❌ IMAP: İşlem sırasında hata oluştu");
+    } finally {
+      if (isConnected) {
+        try {
+          await client.logout();
+          logger.info("📡 IMAP: Bağlantı güvenli şekilde kapatıldı.");
+        } catch (logoutErr) {
+          logger.error({ err: logoutErr }, "⚠️ IMAP: Logout hatası");
+        }
+      }
     }
   }
 
   async fetchOneMessage(uid: number): Promise<GmailMessage | null> {
-    const client = new ImapFlow({
-      host: "imap.gmail.com",
-      port: 993,
-      secure: true,
-      auth: {
-        user: process.env.GMAIL_USER || "",
-        pass: (process.env.GMAIL_PASS || "").replace(/\s/g, ""),
-      },
-      logger: false,
-      tls: {
-        rejectUnauthorized: true,
-      },
-    });
+    const client = this.createClient();
+    let isConnected = false;
 
     try {
-      await this.connectWithRetry(client);
+      await client.connect();
+      isConnected = true;
       const lock = await client.getMailboxLock("INBOX");
 
       try {
         const raw = (await client.fetchOne(
           uid.toString(),
-          {
-            source: true,
-          },
+          { source: true },
           { uid: true },
         )) as FetchMessageObject;
 
@@ -280,8 +206,7 @@ export class GmailService {
 
           let content = parsed.text || "";
           if (!content && parsed.html) {
-            // Fallback to HTML if text is empty (common in forwarded emails)
-            content = parsed.html.replace(/<[^>]*>?/gm, " "); // Simple HTML to text
+            content = parsed.html.replace(/<[^>]*>?/gm, " ");
           }
 
           return {
@@ -298,9 +223,15 @@ export class GmailService {
         lock.release();
       }
     } catch (err) {
-      logger.error({ err }, `Error fetching message ${uid}`);
+      logger.error({ err }, `❌ IMAP: UID ${uid} getirme hatası`);
     } finally {
-      await client.logout();
+      if (isConnected) {
+        try {
+          await client.logout();
+        } catch (logoutErr) {
+          // ignore
+        }
+      }
     }
     return null;
   }

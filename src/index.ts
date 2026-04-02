@@ -103,16 +103,31 @@ const bot = new Bot(token);
 // --- Hata Yönetimi (Global) ---
 bot.catch((err) => {
   const ctx = err.ctx;
+  const errorMsg = (err.error as any)?.message || String(err.error);
+  const isCriticalError =
+    /connection|token|database|auth|invalid|encontrado/i.test(errorMsg);
+
   logger.error(
     {
       error: err.error,
       update: ctx.update,
       userId: ctx.from?.id,
+      isCritical: isCriticalError,
     },
-    "❌ Bot Hatası Yakalandı!",
+    isCriticalError
+      ? "🚨 KRİTİK Bot Hatası Yakalandı!"
+      : "❌ Bot Hatası Yakalandı!",
   );
 
-  // Kullanıcıya bilgi ver (isteğe bağlı)
+  // Kritik sistem hatalarında yöneticiye acil bildirim
+  if (isCriticalError && bossId) {
+    const criticalMsg = `🚨 <b>KRİTİK SİSTEM HATASI</b>\n\n<code>${errorMsg}</code>\n\n<i>Update ID: ${ctx.update?.update_id || "bilinmiyor"}</i>\n<i>User: ${ctx.from?.id || "bilinmiyor"}</i>`;
+    bot.api
+      .sendMessage(bossId, criticalMsg, { parse_mode: "HTML" })
+      .catch(() => {});
+  }
+
+  // Kullanıcıya bilgi ver
   if (ctx.from) {
     bot.api
       .sendMessage(
@@ -156,7 +171,15 @@ async function sendMessageWithDuplicateCheck(
   }
 
   recentMessages.set(hash, now);
-  await bot.api.sendMessage(targetId, message, options);
+  try {
+    await bot.api.sendMessage(targetId, message, options);
+  } catch (sendErr) {
+    const errMsg = sendErr instanceof Error ? sendErr.message : String(sendErr);
+    logger.warn(
+      { err: sendErr, targetId, hash, error: errMsg },
+      "⚠️ sendMessageWithDuplicateCheck hatası (bildirim gönderilmedi - spam önleme)",
+    );
+  }
 
   // Eski kayıtları temizle (10 dakikadan eski)
   const tenMinutesAgo = now - 10 * 60 * 1000;
@@ -170,16 +193,20 @@ async function sendMessageWithDuplicateCheck(
 // Çevresel değişkenlerden ID'leri temizleyerek alalım
 const bossIdsRaw = (process.env.TELEGRAM_BOSS_ID || "")
   .split(",")
-  .map((id) => id.trim().replace(/['"]/g, ""));
+  .map((id) => id.trim().replace(/['"]/g, ""))
+  .filter((id) => id !== "");
 const marinaIdsRaw = (process.env.TELEGRAM_MARINA_ID || "")
   .split(",")
-  .map((id) => id.trim().replace(/['"]/g, ""));
+  .map((id) => id.trim().replace(/['"]/g, ""))
+  .filter((id) => id !== "");
 
+// CRITICAL: Eğer Marina ID'si belirtilmemişse, yedek olarak BOSS_ID kullanıyoruz.
+// Bu sayede butonlar 'undefined' bir ID'ye gitmeye çalışıp kaybolmaz.
+const marinaId = Number(marinaIdsRaw[0]) || Number(bossIdsRaw[0]) || 0;
 const bossId = Number(bossIdsRaw[0]) || 0;
-const marinaId = Number(marinaIdsRaw[0]) || 0;
 
 console.log(`👤 Sistem Yöneticileri (Patronlar): ${bossIdsRaw.join(", ")}`);
-console.log(`👤 Yönetici Asistanı (Marina): ${marinaIdsRaw.join(", ")}`);
+console.log(`👤 Yönetici Asistanı (Marina): ${marinaId} (Yedek: ${bossId})`);
 
 // Güvenlik & Rol Yönetimi Katmanı
 bot.use(async (ctx, next) => {
@@ -690,13 +717,15 @@ async function processOrderDistribution(
       }
 
       let sentCount = 0;
+      let lastPdfError = "";
       for (const targetId of targetIds) {
         if (!targetId) continue;
 
         const staff = staffService.getStaffByTelegramId(targetId);
         // Marina'ya giden Satınalma (Plastik) iş emirleri mutlaka RU olmalı
         const lang =
-          currentDept.toLowerCase() === "satınalma"
+          currentDept.toLowerCase() === "satınalma" ||
+          currentDept.toLowerCase().includes("boya")
             ? "ru"
             : staff?.language || "ru";
 
@@ -711,9 +740,14 @@ async function processOrderDistribution(
           );
           sentCount++;
         } catch (pdfSendErr) {
+          const errMsg =
+            pdfSendErr instanceof Error
+              ? pdfSendErr.message
+              : String(pdfSendErr);
+          lastPdfError = errMsg;
           logger.error(
             { err: pdfSendErr, dept: currentDept, targetId },
-            "❌ PDF dosyası gönderilemedi.",
+            `❌ PDF dosyası gönderilemedi (${currentDept} → ${targetId}): ${errMsg}`,
           );
         }
 
@@ -729,13 +763,43 @@ async function processOrderDistribution(
       if (sentCount > 0) {
         report.success.push(currentDept);
       } else {
-        report.failed.push(currentDept);
+        const failReason = lastPdfError || "Tüm alıcılara gönderim başarısız";
+        logger.error(
+          { dept: currentDept, reason: failReason, targetIds },
+          `❌ ${currentDept} departmanına gönderim tümüyle başarısız: ${failReason}`,
+        );
+        report.failed.push(`${currentDept} (${failReason})`);
       }
     } catch (distError) {
-      logger.error({ err: distError, dept: currentDept }, "Dağıtım hatası");
-      report.failed.push(currentDept);
+      const errMsg =
+        distError instanceof Error ? distError.message : String(distError);
+      const stackTrace =
+        distError instanceof Error ? distError.stack : undefined;
+      logger.error(
+        { err: distError, dept: currentDept, stack: stackTrace },
+        `❌ Dağıtım hatası (${currentDept}): ${errMsg}`,
+      );
+      report.failed.push(`${currentDept} (${errMsg})`);
     }
   }
+
+  // Eğer tüm departmanlar failed olursa boss'a kritik bildirim gönder
+  if (report.success.length === 0 && report.failed.length > 0 && bossId) {
+    const criticalMsg =
+      `🚨 <b>kritik Dağıtım Hatası</b>\n\n` +
+      `<b>Sipariş:</b> ${order.orderNumber || "bilinmiyor"}\n` +
+      `<b>Müşteri:</b> ${order.customerName || "bilinmiyor"}\n` +
+      `<b>Başarısız Departmanlar:</b>\n${report.failed.map((f) => `  • ${f}`).join("\n")}\n\n` +
+      `<i>Tüm departmanlara dağıtım başarısız oldu!</i>`;
+    logger.error(
+      { orderNumber: order.orderNumber, failedDepts: report.failed },
+      "TÜM DEPARTMANLAR FAILED - Boss bildirimi gönderiliyor",
+    );
+    bot.api
+      .sendMessage(bossId, criticalMsg, { parse_mode: "HTML" })
+      .catch(() => {});
+  }
+
   return report;
 }
 
@@ -782,51 +846,36 @@ if (process.env.GMAIL_ENABLED !== "false") {
 
   let isProcessingEmail = false;
 
-  setInterval(async () => {
-    if (isProcessingEmail) {
-      logger.warn("⏳ Önceki e-posta işleme henüz bitmedi, döngü atlanıyor.");
-      return;
-    }
-    isProcessingEmail = true;
-
-    try {
-      if (!gmailService) {
-        const { GmailService } = await import("./utils/gmail.service");
-        gmailService = GmailService.getInstance();
+    setInterval(async () => {
+      if (isProcessingEmail) {
+        logger.warn("⏳ Önceki e-posta işleme henüz bitmedi, döngü atlanıyor.");
+        return;
       }
-      logger.info("🔍 Gmail kontrol ediliyor...");
-      // Standart: Sadece okunmamış mesajları işle
-      await gmailService.processUnreadMessages(10, async (msg: any) => {
-        if (processedUids.has(msg.uid.toString())) {
-          logger.info(`🔄 UID ${msg.uid} zaten işlendi, atlanıyor.`);
-          return;
-        }
+      isProcessingEmail = true;
 
-        const skipDomains = [
-          "groq.co",
-          "supabase.com",
-          "github.com",
-          "google.com",
-          "newsletter",
-        ];
-        if (
-          skipDomains.some((domain) => msg.from.toLowerCase().includes(domain))
-        ) {
-          logger.info(
-            `🧹 Sistem maili atlanıyor: ${msg.subject} (${msg.from})`,
-          );
-          processedUids.add(msg.uid.toString());
-          saveProcessedUids();
-          return;
+      try {
+        // Her döngü başında işlenmiş UID listesini tazeleyerek senkronizasyonu sağla
+        loadProcessedUids();
+
+        if (!gmailService) {
+          const { GmailService } = await import("./utils/gmail.service");
+          gmailService = GmailService.getInstance();
         }
+        logger.info("🔍 Gmail kontrol ediliyor...");
+        // Standart: Sadece okunmamış mesajları işle
+        await gmailService.processUnreadMessages(30, async (msg: any) => {
+          if (processedUids.has(msg.uid.toString())) {
+            logger.info(`🔄 UID ${msg.uid} zaten işlendi, atlanıyor.`);
+            return;
+          }
+
+        // Önemli: Takılmaları ve Telegram spamını önlemek için en başta işaretle
+        processedUids.add(msg.uid.toString());
+        saveProcessedUids();
 
         logger.info(
           `📩 Yeni e-posta işleniyor: ${msg.subject} (UID: ${msg.uid})`,
         );
-
-        // İşlemi en başta işaretle ki poll döngüsü tekrar tetiklemesin
-        processedUids.add(msg.uid.toString());
-        saveProcessedUids();
 
         const emailSummary = `📧 <b>Yeni E-posta</b> \n\n<b>Gönderen:</b> ${OrderService.escapeHTML(msg.from)}\n<b>Konu:</b> ${OrderService.escapeHTML(msg.subject)}`;
         logger.info(`💬 Telegram bildirimi gönderiliyor: ${chatId}`);
@@ -857,268 +906,369 @@ if (process.env.GMAIL_ENABLED !== "false") {
         if (msg.attachments && msg.attachments.length > 0) {
           for (const attr of msg.attachments) {
             if (/\.xlsx?$/i.test(attr.filename)) {
-              logger.info(`🔍 Excel dosyası ayrıştırılıyor: ${attr.filename}`);
-              const excelRows = await XlsxUtils.parseExcel(attr.content);
-              const promptData = excelRows.map((r: any) => {
-                const copy = { ...r };
-                delete copy._imageBuffer;
-                return copy;
-              });
+              const filename = attr.filename;
+              logger.info(`🔍 Excel dosyası ayrıştırılıyor: ${filename}`);
+              try {
+                const excelRows = await XlsxUtils.parseExcel(attr.content);
+                const promptData = excelRows.map((r: any) => {
+                  const copy = { ...r };
+                  delete copy._imageBuffer;
+                  return copy;
+                });
 
+                const order = await orderService.parseAndCreateOrder(
+                  msg.subject,
+                  JSON.stringify(promptData, null, 2),
+                  msg.uid.toString(),
+                  msg.attachments,
+                );
+
+                if (!order) {
+                  logger.warn(
+                    { filename },
+                    "⚠️ Sipariş ayrıştırılamadı (order is null)",
+                  );
+                  continue;
+                }
+
+                if (order.isDuplicate) {
+                  logger.info(
+                    { orderNumber: (order as any).orderNumber },
+                    "⏭️ Mükerrer sipariş atlanıyor.",
+                  );
+                  excelProcessed = true; // TEXT fallback'ın çalışmasını engelle
+                  continue;
+                }
+
+                console.log(
+                  `🚀 [FLOW] Sipariş işleme süreci başlıyor: ${order.orderNumber}`,
+                );
+
+                try {
+                  await orderService.archiveOrderFile(
+                    attr.filename,
+                    attr.content,
+                  );
+                } catch (archErr) {
+                  console.error("❌ [FLOW] Arşivleme hatası:", archErr);
+                }
+
+                orderService
+                  .saveToVisualMemory(order)
+                  .catch((e: any) =>
+                    logger.warn({ err: e }, "⚠️ Görsel hafıza hatası."),
+                  );
+
+                // Gerekli değişkenlerin tanımlanması
+                const draftId = `draft_${Date.now()}`;
+                draftOrderService.saveDraft(draftId, { order, images });
+
+                const visualReport = orderService.generateVisualTable(order);
+                if (!marinaId) {
+                  console.error("❌ marinaId (Patron/Süpervizör) eksik!");
+                  continue;
+                }
+
+                const fabricItems = order.items.filter((i: any) =>
+                  i.department.toLowerCase().includes("kumaş"),
+                );
+                const hasManualDepts = order.items.some((i: any) =>
+                  isManualDept(i.department),
+                );
+
+                // PDF Önizleme Resmi Oluşturma (Opsiyonel)
+                let pdfPreviewImg: Buffer | undefined;
+                try {
+                  // Burada preview generation logic varsa eklenebilir, şimdilik undefined
+                } catch {}
+
+                const autoDepts = Array.from(
+                  new Set(order.items.map((i: any) => i.department)),
+                ).filter((d: any) => !isManualDept(d)) as string[];
+
+                // --- SİLSİLE (TIMING) BAŞLANGICI ---
+                // 1. ADIM: ANINDA OTOMATİK departmanlara gönder
+                if (autoDepts.length > 0) {
+                  const autoDistPromise = (async () => {
+                    try {
+                      console.log(
+                        `🚀 [FLOW] Otomatik birimler işleniyor... (${order.orderNumber})`,
+                      );
+                      const report = await processOrderDistribution(
+                        order,
+                        images,
+                        excelRows,
+                        undefined,
+                        autoDepts,
+                        false,
+                      );
+                      // Bildirim metni oluştur
+                      const totalDepts =
+                        report.success.length + report.failed.length;
+                      if (totalDepts > 0) {
+                        let notifyMsg = `🚀 <b>Автоматическое распределение:</b>\n`;
+                        if (report.success.length > 0) {
+                          notifyMsg += `✅ Отправлено: ${report.success.join(", ")}\n`;
+                        }
+                        if (report.failed.length > 0) {
+                          notifyMsg += `⚠️ Ошибка: ${report.failed.join(", ")}\n`;
+                        }
+
+                        await bot.api.sendMessage(marinaId, notifyMsg, {
+                          parse_mode: "HTML",
+                        });
+                      }
+
+                      return report;
+                    } catch (autoErr) {
+                      const errMsg =
+                        autoErr instanceof Error
+                          ? autoErr.message
+                          : String(autoErr);
+                      logger.error(
+                        { err: autoErr, orderNumber: order.orderNumber },
+                        `❌ [FLOW] Otomatik dağıtım hatası: ${errMsg}`,
+                      );
+                      throw autoErr;
+                    }
+                  })();
+                  // Promise'i beklemeden devam et, hataları yakala
+                  autoDistPromise.catch((err) => {
+                    console.error("❌ [AUTO_DIST] Hata:", err);
+                  });
+                }
+
+                // 2. ADIM: ANINDA — Manuel dept varsa atama UI gönder
+                if (hasManualDepts) {
+                  (async () => {
+                    const keyboard = new InlineKeyboard();
+                    const deptsToAssign = Array.from(
+                      new Set(
+                        order.items
+                          .filter((i: any) => isManualDept(i.department))
+                          .map((i: any) => i.department as string),
+                      ),
+                    );
+
+                    deptsToAssign.forEach((d) => {
+                      keyboard
+                        .text(
+                          getDeptButtonLabel(d, false) as string,
+                          `select_dept_staff:${draftId}|${d}`,
+                        )
+                        .row();
+                    });
+
+                    keyboard
+                      .text(
+                        "🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ",
+                        `auto_distribute:${draftId}`,
+                      )
+                      .row();
+                    keyboard.text("❌ Отменить", `reject_order:${draftId}`);
+
+                    const reportCaption = `📝 <b>Отчёт по заказу</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
+                    console.log(
+                      `🚀 [FLOW] Manuel dept atama UI gönderiliyor... (${order.orderNumber})`,
+                    );
+
+                    if (pdfPreviewImg) {
+                      await bot.api.sendPhoto(
+                        marinaId,
+                        new InputFile(pdfPreviewImg, "preview.png"),
+                        {
+                          caption: reportCaption,
+                          parse_mode: "HTML",
+                          reply_markup: keyboard,
+                        },
+                      );
+                    } else {
+                      await bot.api.sendMessage(marinaId, reportCaption, {
+                        parse_mode: "HTML",
+                        reply_markup: keyboard,
+                      });
+                    }
+                  })();
+                } else {
+                  // Sadece otomatik deptler — Bildirim gönder
+                  (async () => {
+                    const finalMsg = `📝 <b>Заказ обработан автоматически</b>\n\n${visualReport}\n\n<i>Все отделы уведомлены автоматически, назначение не требуется.</i>`;
+                    if (pdfPreviewImg) {
+                      await bot.api.sendPhoto(
+                        marinaId,
+                        new InputFile(pdfPreviewImg, "preview.png"),
+                        {
+                          caption: finalMsg,
+                          parse_mode: "HTML",
+                        },
+                      );
+                    } else {
+                      await bot.api.sendMessage(marinaId, finalMsg, {
+                        parse_mode: "HTML",
+                      });
+                    }
+                    console.log(
+                      `✅ [FLOW] Sipariş tam otomatik dağıtıldı: ${order.orderNumber}`,
+                    );
+                  })();
+                }
+
+                // 3. ADIM: Kumaş bilgisi — sessizce kayıt (bildirim gönderilmez)
+                if (fabricItems.length > 0) {
+                  console.log(
+                    `🧶 [FLOW] Kumaş kalemleri kayıt altına alındı: ${order.orderNumber} (${fabricItems.length} kalem)`,
+                  );
+                }
+
+                excelProcessed = true;
+              } catch (excelErr) {
+                const errMsg =
+                  excelErr instanceof Error
+                    ? excelErr.message
+                    : String(excelErr);
+                const stack =
+                  excelErr instanceof Error ? excelErr.stack : undefined;
+                logger.error(
+                  { err: excelErr, filename, stack, uid: msg.uid },
+                  `❌ Excel işleme hatası (${filename}): ${errMsg}`,
+                );
+                continue;
+              }
+            }
+          }
+        }
+
+        // ── ADIM 2: EĞER EXCEL YOKSA VEYA İŞLENEMEDİYSE TEXT ANALİZİ YAP ──────────
+        if (!excelProcessed) {
+          const hasImage = images && images.length > 0;
+          const hasAttch = msg.attachments && msg.attachments.length > 0;
+          const hasContent = msg.content && msg.content.trim().length >= 1;
+
+          if (hasContent || hasImage || hasAttch) {
+            console.log(
+              `📝 [FLOW] Metin/Resim analizi başlatılıyor (UID: ${msg.uid})...`,
+            );
+            try {
               const order = await orderService.parseAndCreateOrder(
                 msg.subject,
-                JSON.stringify(promptData, null, 2),
+                msg.content,
                 msg.uid.toString(),
                 msg.attachments,
               );
 
-              if (!order) {
-                console.log("⚠️ Sipariş ayrıştırılamadı (order is null)");
-                continue;
-              }
+              if (order) {
+                const draftId = `draft_${Date.now()}`;
+                // 'images' artık üst kapsamda (satır 897) tanımlı, ReferenceError oluşmaz
+                draftOrderService.saveDraft(draftId, { order, images });
+                const visualReport = orderService.generateVisualTable(order);
 
-              if (order.isDuplicate) {
-                logger.info(
-                  { orderNumber: (order as any).orderNumber },
-                  "⏭️ Mükerrer sipariş atlanıyor.",
-                );
-                excelProcessed = true; // TEXT fallback'ın çalışmasını engelle
-                continue;
-              }
-
-              console.log(
-                `🚀 [FLOW] Sipariş işleme süreci başlıyor: ${order.orderNumber}`,
-              );
-
-              try {
-                await orderService.archiveOrderFile(
-                  attr.filename,
-                  attr.content,
-                );
-              } catch (archErr) {
-                console.error("❌ [FLOW] Arşivleme hatası:", archErr);
-              }
-
-              orderService
-                .saveToVisualMemory(order)
-                .catch((e: any) =>
-                  logger.warn({ err: e }, "⚠️ Görsel hafıza hatası."),
-                );
-
-              // Gerekli değişkenlerin tanımlanması
-              const draftId = `draft_${Date.now()}`;
-              draftOrderService.saveDraft(draftId, { order, images });
-
-              const visualReport = orderService.generateVisualTable(order);
-              if (!marinaId) {
-                console.error("❌ marinaId (Patron/Süpervizör) eksik!");
-                continue;
-              }
-
-              const fabricItems = order.items.filter((i: any) =>
-                i.department.toLowerCase().includes("kumaş"),
-              );
-              const hasManualDepts = order.items.some((i: any) =>
-                isManualDept(i.department),
-              );
-
-              // PDF Önizleme Resmi Oluşturma (Opsiyonel)
-              let pdfPreviewImg: Buffer | undefined;
-              try {
-                // Burada preview generation logic varsa eklenebilir, şimdilik undefined
-              } catch {}
-
-              const autoDepts = Array.from(
-                new Set(order.items.map((i: any) => i.department)),
-              ).filter((d: any) => !isManualDept(d)) as string[];
-
-              // --- SİLSİLE (TIMING) BAŞLANGICI ---
-
-              // 1. ADIM: 20 Saniye sonra OTOMATİK departmanlara gönder
-              if (autoDepts.length > 0) {
-                setTimeout(async () => {
-                  try {
-                    console.log(
-                      `🕒 [FLOW] Otomatik birimler için 20 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
-                    );
-                    await processOrderDistribution(
-                      order,
-                      images,
-                      excelRows,
-                      undefined,
-                      autoDepts,
-                      false,
-                    );
-                  } catch (autoErr) {
-                    console.error(
-                      "❌ [FLOW] Otomatik dağıtım hatası:",
-                      autoErr,
-                    );
-                  }
-                }, 20000);
-              }
-
-              // 2. ADIM: 40 Saniye sonra — Manuel dept varsa atama UI gönder, yoksa sessiz devam
-              if (hasManualDepts) {
-                setTimeout(async () => {
-                  const keyboard = new InlineKeyboard();
-                  const deptsToAssign = Array.from(
-                    new Set(
-                      order.items
-                        .filter((i: any) => isManualDept(i.department))
-                        .map((i: any) => i.department as string),
-                    ),
-                  );
-
-                  deptsToAssign.forEach((d) => {
-                    keyboard
-                      .text(
-                        getDeptButtonLabel(d, false) as string,
-                        `select_dept_staff:${draftId}|${d}`,
+                const keyboard = new InlineKeyboard();
+                const deptsToAssign = Array.from(
+                  new Set(
+                    order.items
+                      .filter((i: any) =>
+                        MANUAL_DEPARTMENTS.includes(i.department),
                       )
-                      .row();
-                  });
+                      .map((i: any) => i.department as string),
+                  ),
+                );
 
+                deptsToAssign.forEach((d) => {
                   keyboard
                     .text(
-                      "🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ",
-                      `auto_distribute:${draftId}`,
+                      getDeptButtonLabel(d, false) as string,
+                      `select_dept_staff:${draftId}|${d}`,
                     )
                     .row();
-                  keyboard.text("❌ Отменить", `reject_order:${draftId}`);
+                });
 
-                  const reportCaption = `📝 <b>Отчёт по заказу</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
-                  console.log(
-                    `🕒 [FLOW] Manuel dept atama için 40 saniye beklendi, gönderiliyor... (${order.orderNumber})`,
-                  );
+                keyboard
+                  .text(
+                    "🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ",
+                    `auto_distribute:${draftId}`,
+                  )
+                  .row();
+                keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
-                  if (pdfPreviewImg) {
-                    await bot.api.sendPhoto(
-                      marinaId,
-                      new InputFile(pdfPreviewImg, "preview.png"),
-                      {
-                        caption: reportCaption,
+                const autoDepts = Array.from(
+                  new Set(order.items.map((i: any) => i.department)),
+                ).filter((d: any) => !isManualDept(d)) as string[];
+
+                // 1. ADIM: ANINDA OTOMATİK birimler (Text)
+                if (autoDepts.length > 0) {
+                  const textDistPromise = (async () => {
+                    try {
+                      console.log(
+                        `🚀 [FLOW] (Text) Otomatik birimler işleniyor... (${order.orderNumber})`,
+                      );
+                      const report = await processOrderDistribution(
+                        order,
+                        images,
+                        [],
+                        undefined,
+                        autoDepts,
+                        false,
+                      );
+                      if (report.failed.length > 0) {
+                        logger.error(
+                          {
+                            orderNumber: order.orderNumber,
+                            failedDepts: report.failed,
+                          },
+                          `⚠️ [FLOW] (Text) Otomatik dağıtımda bazı departmanlar başarısız: ${report.failed.join(", ")}`,
+                        );
+                      }
+                      return report;
+                    } catch (distErr) {
+                      const errMsg =
+                        distErr instanceof Error
+                          ? distErr.message
+                          : String(distErr);
+                      logger.error(
+                        { err: distErr, orderNumber: order.orderNumber },
+                        `❌ [FLOW] (Text) Otomatik dağıtım hatası: ${errMsg}`,
+                      );
+                      throw distErr;
+                    }
+                  })();
+                  textDistPromise.catch(() => {});
+                }
+
+                // 2. ADIM: Manuel dept varsa atama UI gönder
+                const hasManualDeptsText = order.items.some((i: any) =>
+                  MANUAL_DEPARTMENTS.includes(i.department),
+                );
+                if (hasManualDeptsText) {
+                  (async () => {
+                    const reportCaption = `📝 <b>Sipariş Raporu</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
+                    console.log(
+                      `🚀 [FLOW] (Text) Manuel dept atama UI gönderiliyor... (${order.orderNumber})`,
+                    );
+                    if (marinaId) {
+                      await bot.api.sendMessage(marinaId, reportCaption, {
                         parse_mode: "HTML",
                         reply_markup: keyboard,
-                      },
-                    );
-                  } else {
-                    await bot.api.sendMessage(marinaId, reportCaption, {
-                      parse_mode: "HTML",
-                      reply_markup: keyboard,
-                    });
-                  }
-                }, 40000);
-              } else {
-                // Sadece otomatik deptler — sessiz kayıt, patron bildirim almaz
-                console.log(
-                  `✅ [FLOW] Sipariş otomatik dağıtıldı (patron bildirimi yok): ${order.orderNumber}`,
-                );
-              }
-
-              // 3. ADIM: Kumaş bilgisi — sessizce kayıt (bildirim gönderilmez)
-              if (fabricItems.length > 0) {
-                console.log(
-                  `🧶 [FLOW] Kumaş kalemleri kayıt altına alındı: ${order.orderNumber} (${fabricItems.length} kalem)`,
-                );
-              }
-
-              excelProcessed = true;
-              processedUids.add(msg.uid.toString());
-              saveProcessedUids();
-            }
-          }
-        }
-
-        if (!excelProcessed && msg.content && msg.content.trim().length > 10) {
-          const order = await orderService.parseAndCreateOrder(
-            msg.subject,
-            msg.content,
-            msg.uid.toString(),
-            msg.attachments,
-          );
-          if (order) {
-            const draftId = `draft_${Date.now()}`;
-            draftOrderService.saveDraft(draftId, { order, images });
-            const visualReport = orderService.generateVisualTable(order);
-
-            const keyboard = new InlineKeyboard();
-            const deptsToAssign = Array.from(
-              new Set(
-                order.items
-                  .filter((i: any) => MANUAL_DEPARTMENTS.includes(i.department))
-                  .map((i: any) => i.department as string),
-              ),
-            );
-
-            deptsToAssign.forEach((d) => {
-              keyboard
-                .text(
-                  getDeptButtonLabel(d, false) as string,
-                  `select_dept_staff:${draftId}|${d}`,
-                )
-                .row();
-            });
-
-            keyboard
-              .text("🚀 ЗАПУСТИТЬ ДИСТРИБУЦИЮ", `auto_distribute:${draftId}`)
-              .row();
-            keyboard.text("❌ Отменить", `reject_order:${draftId}`);
-            const autoDepts = Array.from(
-              new Set(order.items.map((i: any) => i.department)),
-            ).filter((d: any) => !isManualDept(d)) as string[];
-
-            // 1. ADIM: 20 saniye sonra OTOMATİK birimler (Text)
-            if (autoDepts.length > 0) {
-              setTimeout(async () => {
-                try {
-                  console.log(
-                    `🕒 [FLOW] (Text) Otomatik birimler için 20 saniye beklendi... (${order.orderNumber})`,
-                  );
-                  await processOrderDistribution(
-                    order,
-                    images,
-                    [],
-                    undefined,
-                    autoDepts,
-                    false,
-                  );
-                } catch (distErr) {
-                  logger.error(
-                    { err: distErr },
-                    "Otomatik dağıtım hatası (Text)",
-                  );
+                      });
+                    }
+                  })();
                 }
-              }, 20000);
-            }
-
-            // 2. ADIM: Manuel dept varsa 40 saniye sonra atama UI gönder
-            const hasManualDeptsText = order.items.some((i: any) =>
-              MANUAL_DEPARTMENTS.includes(i.department),
-            );
-            if (hasManualDeptsText) {
-              setTimeout(async () => {
-                const reportCaption = `📝 <b>Sipariş Raporu</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
-                console.log(
-                  `🕒 [FLOW] (Text) Manuel dept atama için 40 saniye beklendi... (${order.orderNumber})`,
-                );
-                if (marinaId) {
-                  await bot.api.sendMessage(marinaId, reportCaption, {
-                    parse_mode: "HTML",
-                    reply_markup: keyboard,
-                  });
-                }
-              }, 40000);
-            } else {
-              console.log(
-                `✅ [FLOW] (Text) Sipariş sessiz dağıtıldı: ${order.orderNumber}`,
+              }
+            } catch (err) {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              logger.error(
+                { err, uid: msg.uid },
+                `❌ Sipariş analiz hatası (Text): ${errMsg}`,
               );
             }
+          } else {
+            logger.warn(
+              { uid: msg.uid },
+              "⚠️ Sipariş içeriği veya resim bulunamadı, atlanıyor.",
+            );
           }
         }
 
-        processedUids.add(msg.uid.toString());
-        saveProcessedUids();
+        // Bitti. (Baştaki işaretleme yeterli)
       });
     } catch (e) {
       logger.error({ err: e }, "Gmail check error");

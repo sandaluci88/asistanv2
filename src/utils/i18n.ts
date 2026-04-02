@@ -392,7 +392,7 @@ export function t(
  * Boss → "tr", Herkes → "ru"
  */
 export function getUserLanguage(role: string): Language {
-  return role === "boss" || role === "coordinator" ? "tr" : "ru";
+  return role === "boss" ? "tr" : "ru";
 }
 /**
  * Departman isimlerini yerelleştiren yardımcı fonksiyon

@@ -75,6 +75,67 @@ function isPlastic(tur: string, urunAdi: string, not: string): boolean {
   return keywords.some((kw) => haystack.includes(kw));
 }
 
+/**
+ * Türkçe üretim terimlerini Rusçaya çevirir.
+ */
+function translateProductionTerm(text: string): string {
+  if (!text) return "";
+  let t = text.toLowerCase().trim();
+  
+  // Durumlar
+  if (t.includes("üretim yapılacak") || t.includes("üretilecek") || t.includes("yapılacak")) return "Произвести";
+  if (t.includes("stoktan") || t.includes("stok")) return "Со склада";
+  if (t.includes("hazır")) return "Готово";
+  if (t.includes("acil")) return "СРОЧНО";
+  
+  // Boya & Kaplama
+  if (t === "parlak") return "Глянцевый";
+  if (t === "mat") return "Матовый";
+  if (t === "ipek mat") return "Шелковисто-матовый";
+  if (t === "siyah") return "Черный";
+  if (t === "beyaz") return "Белый";
+  if (t === "ceviz") return "Орех";
+  if (t === "naturel") return "Натуральный";
+  if (t === "lake") return "Лакированный";
+  
+  return text;
+}
+
+/**
+ * Ürün isimlerini Rusçaya çeviren sözlük
+ */
+const PRODUCT_TRANSLATIONS: Record<string, string> = {
+  "sandalye": "Стул",
+  "masa": "Стол",
+  "koltuk": "Кресло",
+  "tabure": "Табурет",
+  "bar taburesi": "Барный табурет",
+  "sehpa": "Журнальный столик",
+  "benç": "Банкетка",
+  "puf": "Пуф",
+  "berjer": "Кресло-бержер",
+  "metal": "Металлический",
+  "ahşap": "Деревянный",
+};
+
+/**
+ * Ürün ismini Rusçaya çevirir (veya TR/RU formatına getirir)
+ */
+function translateProductName(name: string): string {
+  if (!name) return "";
+  const lowerName = name.toLowerCase();
+  
+  let ruName = name;
+  for (const [tr, ru] of Object.entries(PRODUCT_TRANSLATIONS)) {
+    if (lowerName.includes(tr)) {
+      ruName = ruName.replace(new RegExp(tr, "gi"), ru);
+    }
+  }
+  
+  // Eğer hiçbir şey değişmediyse olduğu gibi bırak, değiştiyse [TR] / [RU] yapma (Kullanıcı "boyahane için direkt Rusça" istedi)
+  return ruName;
+}
+
 export interface ParsedOrderResult {
   order: OrderDetail;
   imageMap: Map<number, { buffer: Buffer; extension: string }>;
@@ -222,8 +283,8 @@ export async function parseOrderExcel(
     if (karkasFlag) {
       const detay = [
         boya ? `Цвет: ${boya}` : "",
-        stokNot || "",
-        not || "",
+        translateProductionTerm(stokNot),
+        translateProductionTerm(not),
         olcu ? `Размер: ${olcu}` : "",
       ]
         .filter(Boolean)
@@ -417,12 +478,18 @@ function makeItem(
   imageBuffer?: Buffer,
   imageExtension?: string,
 ): OrderItem {
+  // Departman bazlı ürün ismi çevirisi (Boyahane için RU zorunlu)
+  const isRussianRequired =
+    department === "Boyahane" || department === "Satınalma";
+  const translatedUrunAdi = isRussianRequired ? translateProductName(urunAdi) : urunAdi;
+  const translatedDetails = isRussianRequired ? translateProductionTerm(details) : details;
+
   return {
     id: `${orderId}_${index}`,
-    product: urunAdi + (kod ? ` (${kod})` : ""),
+    product: translatedUrunAdi + (kod ? ` (${kod})` : ""),
     department,
     quantity,
-    details: [details, olcu ? `Размер: ${olcu}` : ""]
+    details: [translatedDetails, olcu ? `Размер: ${olcu}` : ""]
       .filter(Boolean)
       .join(" | "),
     source: department === "Satınalma" ? "External" : "Production",

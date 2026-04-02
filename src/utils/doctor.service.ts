@@ -128,7 +128,7 @@ export class DoctorService {
         user: process.env.GMAIL_USER || "",
         pass: process.env.GMAIL_PASS || "",
       },
-      tls: { rejectUnauthorized: true },
+      tls: { rejectUnauthorized: false },
     });
     try {
       await client.connect();

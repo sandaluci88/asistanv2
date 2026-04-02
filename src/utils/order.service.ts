@@ -66,23 +66,32 @@ export class OrderService {
       // 🚨 SİSTEM VE REKLAM MAİLLERİNİ FİLTRELE
       const lowerSubject = (subject || "").toLowerCase();
       const lowerContent = (content || "").toLowerCase();
+      const hasImages = attachments?.some((a) =>
+        a.contentType?.startsWith("image/"),
+      );
       const hasExcel = attachments?.some(
         (a) => a.filename?.endsWith(".xlsx") || a.filename?.endsWith(".xls"),
       );
 
       // Eğer mail bir sipariş içermiyorsa (Excel yoksa) ve sistem/bildirim maili gibiyse atla
+      // Ama konu "sipariş" içeriyorsa veya resim varsa ASLA ATLAMA!
       const isSystemMail =
-        lowerSubject.includes("netlify") ||
-        lowerSubject.includes("welcome") ||
-        lowerSubject.includes("verification") ||
-        lowerSubject.includes("security alert") ||
-        lowerSubject.includes("deploy") ||
-        lowerSubject.includes("netlify team") ||
-        lowerContent.includes("netlify") ||
-        lowerContent.includes("team is ready") ||
-        lowerContent.includes("deploy your first app") ||
-        lowerContent.includes("subscription") ||
-        lowerContent.includes("billing");
+        (lowerSubject.includes("netlify") ||
+          lowerSubject.includes("welcome") ||
+          lowerSubject.includes("verification") ||
+          lowerSubject.includes("security alert") ||
+          lowerSubject.includes("deploy") ||
+          lowerSubject.includes("netlify team") ||
+          lowerContent.includes("netlify") ||
+          lowerContent.includes("team is ready") ||
+          lowerContent.includes("deploy your first app") ||
+          lowerContent.includes("subscription") ||
+          lowerContent.includes("billing")) &&
+        !lowerSubject.includes("sipariş") &&
+        !lowerSubject.includes("siparış") &&
+        !lowerContent.includes("sipariş") &&
+        !lowerContent.includes("siparış") &&
+        !hasImages;
 
       if (isSystemMail && !hasExcel) {
         console.log(

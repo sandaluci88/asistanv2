@@ -168,9 +168,11 @@ export class CronService {
     }
     try {
       const data = fs.readFileSync(this.tasksFile, "utf-8");
-      return JSON.parse(data) as DynamicTask[];
+      if (!data || data.trim() === "") return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? (parsed as DynamicTask[]) : [];
     } catch (error) {
-      console.error("❌ tasks.json okunamadı:", error);
+      console.error("❌ tasks.json okunamadı veya geçersiz:", error);
       return [];
     }
   }

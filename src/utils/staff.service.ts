@@ -47,6 +47,13 @@ export class StaffService {
   }
 
   private async loadStaffFromSupabase() {
+    // TEST MODU: DEV_MODE=true iken yerel staff.json'dan yükle (Supabase unique constraint sorunu için)
+    if (process.env.DEV_MODE === "true") {
+      console.log("🧪 [DEV_MODE] Yerel staff.json kullanılıyor (Supabase atlandı)");
+      this.loadFromLocalFile();
+      return;
+    }
+
     try {
       const data = await this.supabase.getAllStaff();
       if (data) {
