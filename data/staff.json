@@ -1,12 +1,22 @@
 [
   {
     "id": "f0000000-0000-0000-0000-000000000001",
-    "telegramId": null,
-    "name": "Marina (Boss)",
-    "department": "Marina",
-    "role": "SuperAdmin",
+    "telegramId": 1030595483,
+    "name": "Marina (Genel Koordinatör)",
+    "department": "Yönetim",
+    "role": "Coordinator",
     "phone": null,
     "language": "ru",
+    "isMarina": true
+  },
+  {
+    "id": "f0000000-0000-0000-0000-000000000000",
+    "telegramId": 6030287709,
+    "name": "Barış Bey",
+    "department": "Yönetim",
+    "role": "SuperAdmin",
+    "phone": null,
+    "language": "tr",
     "isMarina": false
   },
   {

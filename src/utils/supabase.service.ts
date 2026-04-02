@@ -173,14 +173,52 @@ export class SupabaseService {
     return data;
   }
 
-  // --- Queries ---
-  async getActiveOrders() {
-    const { data, error } = await this.client
-      .from("orders")
-      .select("*, order_items(*)")
-      .neq("status", "archived");
+  // --- Reset (TEST ONLY) ---
+  async resetDatabase() {
+    console.log("🧹 Veritabanı temizleniyor (Sadece test verileri)...");
+    
+    // 1. Supabase Temizliği
+    // Foreign key kısıtlamaları nedeniyle önce order_items sonra orders silinmeli
+    const { error: itemsError } = await this.client.from("order_items").delete().neq("id", "0");
+    if (itemsError) throw itemsError;
 
-    if (error) throw error;
-    return data;
+    const { error: ordersError } = await this.client.from("orders").delete().neq("id", "0");
+    if (ordersError) throw ordersError;
+
+    const { error: visualError } = await this.client.from("visual_memory").delete().neq("id", "0");
+    if (visualError) throw visualError;
+
+    // 2. Yerel "Hayalet" Verilerin Temizliği
+    const fs = require("fs");
+    const path = require("path");
+    const dataDir = path.resolve(process.cwd(), "data");
+    
+    const filesToClear = [
+      "processed_uids.json",
+      "verilen_siparisler.log",
+      "orders.json",
+      "production.json",
+      "siparis_arsivi.json",
+      "tasks.json"
+    ];
+
+    for (const fileName of filesToClear) {
+      const filePath = path.join(dataDir, fileName);
+      if (fs.existsSync(filePath)) {
+        try {
+          if (fileName.endsWith(".json")) {
+            fs.writeFileSync(filePath, fileName === "processed_uids.json" ? "[]" : "{}");
+          } else {
+            fs.writeFileSync(filePath, "");
+          }
+          console.log(`✅ Yerel dosya temizlendi: ${fileName}`);
+        } catch (err) {
+          console.warn(`⚠️ Dosya temizlenemedi (${fileName}):`, err);
+        }
+      }
+    }
+
+    console.log("✅ Tüm test verileri ve hayalet dosyalar başarıyla silindi.");
+    return true;
   }
 }

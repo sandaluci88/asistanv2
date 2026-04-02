@@ -20,11 +20,16 @@ export class CommandHandler {
   }
 
   private isBoss(ctx: Context): boolean {
-    return (ctx as any).role === "SuperAdmin" || (ctx as any).role === "boss";
+    return (ctx as any).role === "boss";
+  }
+
+  private isCoordinator(ctx: Context): boolean {
+    return (ctx as any).role === "coordinator";
   }
 
   private getLang(ctx: Context): Language {
-    return getUserLanguage((ctx as any).role || "guest");
+    const role = (ctx as any).role || "guest";
+    return getUserLanguage(role);
   }
 
   public async handleStart(ctx: Context) {
@@ -33,10 +38,18 @@ export class CommandHandler {
       ? this.staffService.getStaffByTelegramId(userId)
       : null;
     const isBoss = this.isBoss(ctx);
-    const lang = staffMember?.language || (isBoss ? "tr" : "ru");
+    const isCoordinator = this.isCoordinator(ctx);
+    const lang = staffMember?.language || (isBoss || isCoordinator ? "tr" : "ru");
 
     if (isBoss) {
       await ctx.reply(t("welcome_boss", lang as Language), {
+        parse_mode: "Markdown",
+      });
+      return;
+    }
+
+    if (isCoordinator) {
+      await ctx.reply(t("welcome_coordinator", lang as Language), {
         parse_mode: "Markdown",
       });
       return;
@@ -339,17 +352,27 @@ export class CommandHandler {
       { parse_mode: "Markdown" },
     );
 
-    const result = await SelfCleanupService.performCleanup();
+    // 1. Dosya sistemi temizliği
+    const fileResult = await SelfCleanupService.performCleanup();
 
-    if (result.success) {
+    // 2. Veritabanı temizliği (Supabase)
+    let dbError = null;
+    try {
+      const supabase = require("../utils/supabase.service").SupabaseService.getInstance();
+      await supabase.resetDatabase();
+    } catch (e: any) {
+      dbError = e.message;
+    }
+
+    if (fileResult.success && !dbError) {
       let report = "✨ *Temizlik Başarıyla Tamamlandı!*\n\n";
-      if (result.deletedItems.length > 0) {
-        report += "🗑️ *Silinen/Sıfırlanan Öğeler:*\n";
-        result.deletedItems.forEach((item) => {
+      report += "📦 *Supabase:* Siparişler ve görsel hafıza sıfırlandı. (Personel listesi korundu)\n";
+
+      if (fileResult.deletedItems.length > 0) {
+        report += "\n🗑️ *Silinen Dosyalar:*\n";
+        fileResult.deletedItems.forEach((item) => {
           report += `- ${item}\n`;
         });
-      } else {
-        report += "Sistem zaten temizdi, temizlenecek bir şey bulunamadı.";
       }
 
       await ctx.api.editMessageText(
@@ -359,10 +382,15 @@ export class CommandHandler {
         { parse_mode: "Markdown" },
       );
     } else {
+      const errMsg = dbError
+        ? `❌ Veritabanı hatası: ${dbError}`
+        : "❌ Dosya temizliği sırasında hata oluştu.";
+
       await ctx.api.editMessageText(
         ctx.chat!.id,
         statusMsg.message_id,
-        "❌ Temizlik sırasında bazı hatalar oluştu. Logları kontrol ediniz.",
+        errMsg,
+        { parse_mode: "Markdown" },
       );
     }
   }

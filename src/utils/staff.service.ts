@@ -164,7 +164,35 @@ export class StaffService {
   }
 
   public getMarina(): Staff | undefined {
-    return this.staffList.find((s) => s.isMarina === true);
+    // Önce isMarina flag'i olan personeli ara
+    const marina = this.staffList.find((s) => s.isMarina === true || s.role === "Coordinator");
+    if (marina) return marina;
+
+    // Eğer DB'de yoksa çevre değişkeninden ID ile bulmaya çalış
+    const marinaId = process.env.TELEGRAM_MARINA_ID || process.env.TELEGRAM_BOSS_ID;
+    if (marinaId) {
+      return this.getStaffByTelegramId(Number(marinaId));
+    }
+    return undefined;
+  }
+
+  public isCoordinator(telegramId: number): boolean {
+    const marinaIdRaw = (process.env.TELEGRAM_MARINA_ID || "").trim();
+    const bossIdRaw = (process.env.TELEGRAM_BOSS_ID || "").trim();
+
+    // 1. Çevre değişkeni kontrolü (Marina veya Boss - test için)
+    const coordinatorIds = [
+      ...marinaIdRaw.split(",").map((id) => id.trim()),
+      ...bossIdRaw.split(",").map((id) => id.trim()),
+    ].filter((id) => id !== "");
+
+    if (coordinatorIds.includes(telegramId.toString())) {
+      return true;
+    }
+
+    // 2. Staff listesindeki role kontrolü
+    const staff = this.getStaffByTelegramId(telegramId);
+    return staff?.role === "Coordinator" || staff?.isMarina === true;
   }
 
   public getAllStaff(): Staff[] {

@@ -177,7 +177,6 @@ const marinaIdsRaw = (process.env.TELEGRAM_MARINA_ID || "")
 
 const bossId = Number(bossIdsRaw[0]) || 0;
 const marinaId = Number(marinaIdsRaw[0]) || 0;
-const supervisorId = marinaId || bossId;
 
 console.log(`👤 Sistem Yöneticileri (Patronlar): ${bossIdsRaw.join(", ")}`);
 console.log(`👤 Yönetici Asistanı (Marina): ${marinaIdsRaw.join(", ")}`);
@@ -188,6 +187,7 @@ bot.use(async (ctx, next) => {
   if (!userId) return;
 
   const isBoss = staffService.isBoss(userId);
+  const isCoordinator = staffService.isCoordinator(userId);
   let staffMember = staffService.getStaffByTelegramId(userId);
 
   // KRİTİK: Eğer kişi PATRON ise ama henüz veritabanında (staff.json) yoksa, OTOMATİK KAYDET.
@@ -218,7 +218,13 @@ bot.use(async (ctx, next) => {
   const username = ctx.from?.username || "Bilinmiyor";
 
   // Context'e rol bilgisini ekleyelim
-  (ctx as any).role = isBoss ? "boss" : isRegisteredStaff ? "staff" : "guest";
+  (ctx as any).role = isBoss
+    ? "boss"
+    : isCoordinator
+      ? "coordinator"
+      : isRegisteredStaff
+        ? "staff"
+        : "guest";
   (ctx as any).staffInfo = staffMember;
 
   const text = ctx.message?.text || "";
@@ -1140,13 +1146,14 @@ if (botEnabled) {
 
     // Cron servisini başlat (Sabah brifingi, hatırlatıcılar vb.)
     try {
-      if (supervisorId && supervisorId !== 0) {
-        const cronService = CronService.getInstance(bot, supervisorId);
+      const activeSupervisorId = marinaId || bossId;
+      if (activeSupervisorId && activeSupervisorId !== 0) {
+        const cronService = CronService.getInstance(bot, activeSupervisorId);
         cronService.init();
         console.log("⏰ Cron Service initialized and started.");
       } else {
         console.warn(
-          "⚠️ Cron Service skipped: TELEGRAM_MARINA_ID and TELEGRAM_BOSS_ID (supervisorId) missing.",
+          "⚠️ Cron Service skipped: TELEGRAM_MARINA_ID and TELEGRAM_BOSS_ID missing.",
         );
       }
     } catch (cronErr) {

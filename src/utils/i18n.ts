@@ -15,6 +15,10 @@ const translations: Record<string, Record<Language, string>> = {
     tr: "✨ *Sandaluci Yönetim Paneli Aktif.* 👋\n\nSisteme tam yetkiyle bağlandınız. Komutlarınızı bekliyorum, Barış Bey.\n\n🛠️ *Komut Listesi:*\n📌 /ajanda - Günlük plan\n👥 /personel - Ekip yönetimi\n📦 /durum - Üretim raporu\n📝 /kayit - Personel ekle\n🗑️ /sil - Personel çıkar\n📋 /takip - İş takip\n🛠️ /dev - Geliştirici Modu\n🧽 /temizlik - Verileri temizle",
     ru: "✨ *Панель управления Sandaluci активна.* 👋\n\nВы подключены с полными правами. Жду ваших команд.\n\n🛠️ *Список команд:*\n📌 /ajanda - Расписание\n👥 /personel - Персонал\n📦 /durum - Статус\n📝 /kayit - Добавить\n🗑️ /sil - Удалить",
   },
+  welcome_coordinator: {
+    tr: "✨ *Genel Koordinatör Paneli Aktif.* 🧭\n\nHoş geldiniz. Üretim dağıtım ve personel atamalarını buradan yönetebilirsiniz.\n\n🛠️ *Yetkileriniz:*\n📌 /durum - Üretim raporu\n📋 /takip - İş takip\n🧵 Personel Atama (Otomatik)",
+    ru: "✨ *Панель Генерального Координатора активна.* 🧭\n\nДобро пожаловать. Здесь вы можете управлять распределением производства и назначением персонала.\n\n🛠️ *Ваши полномочия:*\n📌 /durum - Отчет о производстве\n📋 /takip - Отслеживание работ\n🧵 Назначение персонала (Автоматически)",
+  },
   welcome_staff: {
     tr: "✅ *Sandaluci Personel Sistemi Aktif.* 👋\n\nHoş geldiniz {name}. *{department}* bölümü için yetkilendirildiniz.\n\nBilgi almak için /durum yazabilirsiniz.",
     ru: "✅ *Система персонала Sandaluci активна.* 👋\n\nДобро пожаловать, {name}. Вы авторизованы для отдела *{department}*.\n\nДля получения информации напишите /durum.",
@@ -341,6 +345,18 @@ const translations: Record<string, Record<Language, string>> = {
     tr: "Kumaş",
     ru: "Ткань",
   },
+  role_boss: {
+    tr: "Patron",
+    ru: "Босс",
+  },
+  role_coordinator: {
+    tr: "Genel Koordinatör",
+    ru: "Генеральный координатор",
+  },
+  role_staff: {
+    tr: "Personel",
+    ru: "Персонал",
+  },
 };
 
 /**
@@ -376,7 +392,7 @@ export function t(
  * Boss → "tr", Herkes → "ru"
  */
 export function getUserLanguage(role: string): Language {
-  return role === "boss" ? "tr" : "ru";
+  return role === "boss" || role === "coordinator" ? "tr" : "ru";
 }
 /**
  * Departman isimlerini yerelleştiren yardımcı fonksiyon
