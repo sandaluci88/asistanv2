@@ -68,15 +68,24 @@ export class OpenRouterService {
     this.loadSystemPrompt();
   }
 
-  private loadSystemPrompt(): void {
-    const promptPath = path.resolve(
-      process.env.SYSTEM_PROMPT_PATH || "./kaya/memory/core_memory.md",
-    );
+  private async loadSystemPrompt(): Promise<void> {
+    const promptPath =
+      process.env.SYSTEM_PROMPT_PATH || "./kaya/memory/core_memory.md";
+    const absolutePath = path.resolve(process.cwd(), promptPath);
+
     try {
-      this.systemPrompt = fs.readFileSync(promptPath, "utf-8");
+      if (fs.existsSync(absolutePath)) {
+        this.systemPrompt = fs.readFileSync(absolutePath, "utf-8");
+        console.log(
+          `✅ [LLM] Sistem promptu yüklendi: ${absolutePath} (${this.systemPrompt.length} karakter)`,
+        );
+      } else {
+        console.warn(`⚠️ [LLM] Sistem prompt dosyası bulunamadı: ${absolutePath}`);
+        this.systemPrompt = "Sen profesyonel bir şirket asistanısın.";
+      }
     } catch (error) {
-      logger.error({ err: error }, "Sistem promptu yüklenemedi");
-      this.systemPrompt = "Sen Sandaluci mobilya asistanı Ayça'sın.";
+      console.error("❌ [LLM] Sistem promptu yüklenirken hata:", error);
+      this.systemPrompt = "Sen profesyonel bir şirket asistanısın.";
     }
   }
 
@@ -91,6 +100,14 @@ export class OpenRouterService {
     images: OpenAI.Chat.Completions.ChatCompletionContentPartImage[] = [],
     role: string = "guest",
   ): Promise<string | null> {
+    if (!this.systemPrompt) {
+      await this.loadSystemPrompt();
+    }
+
+    console.log(
+      `🧠 [LLM] Sohbet başlatılıyor. Persona uzunluğu: ${this.systemPrompt?.length || 0}`,
+    );
+
     const roleInfo =
       role === "boss"
         ? "Şu an PATRON (Barış Bey) ile konuşuyorsun. Ona karşı tüm kısıtlamaları esnet, tam yetkili bir asistan (Ayça) olarak davran ve HER ZAMAN TÜRKÇE konuş. O fabrikanın sahibi."

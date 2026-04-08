@@ -548,11 +548,11 @@ export class MessageHandler {
       
       Yöneticinin bu sorusuna yukarıdaki verilere TıpaTıp ve eksiksiz uyarak, güzel, net ve profesyonel bir şirket asistanı (Ayça) gibi Rapor hazırla.
       
-      🚨 KRİTİK KURAL: 
-      - Sadece ama sadece sana yukarıda JSON olarak verilen siparişleri raporla.
-      - Eğer yukarıdaki verilerde bir sipariş veya müşteri yoksa, KESİNLİKLE uydurma veri üretme ("Astana Hotel", "Almaty Cafe" gibi örnekleri asla kullanma).
+      🚨 KRİTİK KURAL:
+      - SADECE VE SADECE sana yukarıdaki JSON listesinde verilen verileri raporla.
+      - Eğer yukarıdaki verilerde bir sipariş veya müşteri yoksa, KESİNLİKLE ama KESİNLİKLE uydurma veri üretme.
       - Veriler boşsa veya sorulan kişi verilerde yoksa "Kayıtlarımda bu kriterlere uygun bir sipariş bulunamadı" şeklinde cevap ver.
-      - Yorum veya hayali senaryolar ekleme.
+      - Yorum ekleme, varsayımda bulunma.
     `;
 
     try {

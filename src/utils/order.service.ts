@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { OpenRouterService } from "./llm.service";
 import { StaffService } from "./staff.service";
-import { ExcelRow } from "./xlsx-utils";
+
 import { ImageEmbeddingService } from "./image-embedding.service";
 import { SupabaseService } from "./supabase.service";
 import { t, Language, translateDepartment } from "./i18n";
@@ -101,8 +101,6 @@ export class OrderService {
       }
 
       let fullContent = `Konu: ${subject}\n\nİçerik:\n${content}`;
-      let isExcel = false;
-      let rawExcelData: ExcelRow[] | undefined;
 
       // ── EXCEL EKİ: Sabit parser ile işle (LLM gerekmez) ──────────
       if (attachments && attachments.length > 0) {
@@ -247,12 +245,6 @@ export class OrderService {
       console.log("--- RAW MAIL CONTENT START ---");
       console.log(content);
       console.log("--- RAW MAIL CONTENT END ---");
-
-      if (isExcel) {
-        console.log(
-          `📊 Excel verisi LLM'e gönderiliyor (${fullContent.length} karakter)`,
-        );
-      }
 
       console.log(`🧠 [DEBUG] LLM Parametreleri:`, {
         subject,
@@ -510,103 +502,6 @@ export class OrderService {
             : undefined,
         };
       });
-
-      // Görselleri işle (Eğer Excel verisi varsa)
-      if (isExcel && rawExcelData) {
-        const floatingImages = (rawExcelData as any).floatingImages as
-          | Buffer[]
-          | undefined;
-        let floatingIndex = 0;
-
-        order.items.forEach((item) => {
-          let hasAssignedImage = false;
-
-          // 1. Doğrudan satır numarası eşleşmesi (En güvenilir)
-          if (item.rowIndex) {
-            const excelMatch = rawExcelData.find(
-              (r) => r._rowNumber === item.rowIndex,
-            );
-            if (excelMatch && excelMatch._imageBuffer) {
-              item.imageBuffer = excelMatch._imageBuffer;
-              item.imageExtension = excelMatch._imageExtension || "png";
-              hasAssignedImage = true;
-              console.log(
-                `✅ [DEBUG] Resim Eşleşti (RowIndex): Ürün=${item.product}, Satır=${item.rowIndex}`,
-              );
-            }
-          }
-
-          // 2. Satır eşleşmediyse temizlenmiş isim üzerinden ara (Fallback 1)
-          if (!hasAssignedImage) {
-            const productLower = item.product.toLowerCase();
-            const detailsLower = (item.details || "").toLowerCase();
-
-            // Plastik ürünler için özel kontrol (TR, RU ve EN)
-            const isImgPlastik =
-              productLower.includes("plastik") ||
-              productLower.includes("пластик") ||
-              productLower.includes("plastic") ||
-              detailsLower.includes("plastik") ||
-              detailsLower.includes("пластик") ||
-              detailsLower.includes("plastic");
-
-            if (isImgPlastik) {
-              console.log(
-                `🔍 [IMG] Plastik ürün için görsel eşleştirme deneniyor: ${item.product}`,
-              );
-              // Floating resim varsa → plastik ürüne ata ve sayacı ilerlet
-              if (floatingImages && floatingImages.length > floatingIndex) {
-                item.imageBuffer = floatingImages[floatingIndex++]; // ← ++ eklendi!
-                item.imageExtension = "png";
-                console.log(
-                  `✅ [IMG] Plastik ürün için floating görsel atandı (index: ${floatingIndex - 1}).`,
-                );
-                hasAssignedImage = true;
-              } else {
-                console.log(
-                  `⚠️ [IMG] Plastik ürün için floating görsel bulunamadı (Excel'de resim yok mu?): ${item.product}`,
-                );
-              }
-            }
-
-            // Genel isim eşleşmesi (plastik değilse veya floating yoksa)
-            if (!hasAssignedImage) {
-              const nameMatch = rawExcelData.find((r) => {
-                const col3 = String(r.Col3 || "").toLowerCase();
-                return (
-                  col3.includes(productLower) || productLower.includes(col3)
-                );
-              });
-              if (nameMatch && nameMatch._imageBuffer) {
-                item.imageBuffer = nameMatch._imageBuffer;
-                item.imageExtension = nameMatch._imageExtension || "png";
-                hasAssignedImage = true;
-                console.log(
-                  `✅ [DEBUG] Resim Eşleşti (NameMatch): Ürün=${item.product}`,
-                );
-              }
-            }
-          }
-
-          // 3. Satırdan resim eşleşmediyse floating (serbest) resimlerden birini ata (Fallback 2)
-          if (
-            !hasAssignedImage &&
-            floatingImages &&
-            floatingIndex < floatingImages.length
-          ) {
-            item.imageBuffer = floatingImages[floatingIndex++];
-            item.imageExtension = "png";
-            console.log(
-              `✅ [DEBUG] Serbest Resim (Fallback) Eşleşti: Ürün=${item.product}, Kalan Serbest Resim=${floatingImages.length - floatingIndex}`,
-            );
-          } else if (!hasAssignedImage) {
-            console.log(`⚠️ [DEBUG] Resim Bulunamadı: Ürün=${item.product}`);
-          }
-
-          // internet URL'lerini temizle - önceliğimiz her zaman Excel dosyası
-          delete item.imageUrl;
-        });
-      }
 
       await this.repository.save(order);
 

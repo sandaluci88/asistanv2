@@ -1,4 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -104,7 +107,6 @@ export class SupabaseService {
       .eq("telegram_id", staff.telegramId)
       .maybeSingle();
 
-    const crypto = require("crypto");
     // Veritabanında varsa onun ID'sini, yoksa bize gelen ID'yi, o da yoksa yeni bir UUID kullan
     const staffId = existing
       ? existing.id
@@ -210,8 +212,6 @@ export class SupabaseService {
     if (visualError) throw visualError;
 
     // 2. Yerel "Hayalet" Verilerin Temizliği
-    const fs = require("fs");
-    const path = require("path");
     const dataDir = path.resolve(process.cwd(), "data");
 
     const filesToClear = [

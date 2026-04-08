@@ -1,5 +1,6 @@
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
+import fsSync from "fs";
 import { SupabaseService } from "./supabase.service";
 import { Language } from "./i18n";
 
@@ -38,11 +39,11 @@ export class StaffService {
 
   private ensureDataDirectory() {
     const dataDir = path.dirname(this.staffFilePath);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    if (!fsSync.existsSync(dataDir)) {
+      fsSync.mkdirSync(dataDir, { recursive: true });
     }
-    if (!fs.existsSync(this.staffFilePath)) {
-      fs.writeFileSync(this.staffFilePath, JSON.stringify([], null, 2));
+    if (!fsSync.existsSync(this.staffFilePath)) {
+      fsSync.writeFileSync(this.staffFilePath, JSON.stringify([], null, 2));
     }
   }
 
@@ -52,7 +53,7 @@ export class StaffService {
       console.log(
         "🧪 [DEV_MODE] Yerel staff.json kullanılıyor (Supabase atlandı)",
       );
-      this.loadFromLocalFile();
+      await this.loadFromLocalFile();
       return;
     }
 
@@ -70,31 +71,31 @@ export class StaffService {
           language: s.language || "ru",
           isMarina: s.is_marina,
         }));
-        this.saveToLocalFile(); // Yerelde yedekle
+        await this.saveToLocalFile(); // Yerelde yedekle
       }
     } catch (error) {
       console.error(
         "❌ Personel DB'den yüklenemedi, yerel dosyaya dönülüyor:",
         error,
       );
-      this.loadFromLocalFile();
+      await this.loadFromLocalFile();
     }
   }
 
-  private loadFromLocalFile() {
+  private async loadFromLocalFile() {
     try {
-      if (fs.existsSync(this.staffFilePath)) {
-        const data = fs.readFileSync(this.staffFilePath, "utf-8");
-        this.staffList = JSON.parse(data);
-      }
+      const data = await fs.readFile(this.staffFilePath, "utf-8");
+      this.staffList = JSON.parse(data);
     } catch (err) {
-      console.error("❌ Yerel personel dosyası okunamadı:", err);
+      if ((err as any).code !== "ENOENT") {
+        console.error("❌ Yerel personel dosyası okunamadı:", err);
+      }
     }
   }
 
-  private saveToLocalFile() {
+  private async saveToLocalFile() {
     try {
-      fs.writeFileSync(
+      await fs.writeFile(
         this.staffFilePath,
         JSON.stringify(this.staffList, null, 2),
       );
@@ -249,7 +250,7 @@ export class StaffService {
       } else {
         this.staffList.push(staffData as Staff);
       }
-      this.saveToLocalFile();
+      await this.saveToLocalFile();
     }
   }
 
@@ -299,7 +300,7 @@ export class StaffService {
         } else {
           this.staffList.push(staffData);
         }
-        this.saveToLocalFile();
+        await this.saveToLocalFile();
       }
     }
 
@@ -345,7 +346,7 @@ export class StaffService {
       const index = this.staffList.findIndex((s) => s.phone === staff.phone);
       if (index !== -1) {
         this.staffList[index] = updatedStaff;
-        this.saveToLocalFile();
+        await this.saveToLocalFile();
       }
       return updatedStaff;
     }
@@ -363,7 +364,7 @@ export class StaffService {
         );
       }
       this.staffList.splice(index, 1);
-      this.saveToLocalFile();
+      await this.saveToLocalFile();
       return true;
     }
     return false;
@@ -372,10 +373,13 @@ export class StaffService {
   /**
    * Patronun (Barış Bey) daha önce özel cümleyle tanınıp tanınmadığını kontrol eder.
    */
-  public isBossRecognizedInMemory(): boolean {
-    if (!fs.existsSync(this.memoryFilePath)) return false;
-    const content = fs.readFileSync(this.memoryFilePath, "utf-8");
-    return content.includes("BARIS_BEY_RECOGNIZED=TRUE");
+  public async isBossRecognizedInMemory(): Promise<boolean> {
+    try {
+      const content = await fs.readFile(this.memoryFilePath, "utf-8");
+      return content.includes("BARIS_BEY_RECOGNIZED=TRUE");
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -386,13 +390,14 @@ export class StaffService {
     const entry = `\n<!-- MEMORY_ENTRY_START -->\n[${timestamp}] BARIŞ_BEY_RECOGNIZED=TRUE\nBarış Bey asistan Ayça tarafından başarıyla tanındı ve sisteme dahil edildi.\n<!-- MEMORY_ENTRY_END -->\n`;
 
     try {
-      if (!fs.existsSync(this.memoryFilePath)) {
-        fs.writeFileSync(
+      try {
+        await fs.access(this.memoryFilePath);
+        await fs.appendFile(this.memoryFilePath, entry);
+      } catch {
+        await fs.writeFile(
           this.memoryFilePath,
           "# Sandaluci - Ayça Hafıza Kayıtları\n" + entry,
         );
-      } else {
-        fs.appendFileSync(this.memoryFilePath, entry);
       }
       console.log("📝 Ayça hafızasına Barış Bey'i kaydetti.");
     } catch (error) {
