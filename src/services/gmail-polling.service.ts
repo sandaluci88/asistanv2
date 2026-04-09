@@ -12,6 +12,7 @@ import {
   MANUAL_DEPARTMENTS,
 } from "../utils/department.utils";
 import { logger } from "../utils/logger";
+import { translateDepartment } from "../utils/i18n";
 
 /**
  * Gmail'den düzenli olarak okunmamış mesajları çeker ve sipariş işleme sürecini başlatır.
@@ -373,10 +374,10 @@ export class GmailPollingService {
           if (totalDepts > 0) {
             let notifyMsg = `🚀 <b>Автоматическое распределение:</b>\n`;
             if (report.success.length > 0) {
-              notifyMsg += `✅ Отправлено: ${report.success.join(", ")}\n`;
+              notifyMsg += `✅ Отправлено: ${report.success.map((d) => translateDepartment(d, "ru")).join(", ")}\n`;
             }
             if (report.failed.length > 0) {
-              notifyMsg += `⚠️ Ошибка: ${report.failed.join(", ")}\n`;
+              notifyMsg += `⚠️ Ошибка: ${report.failed.map((d) => translateDepartment(d, "ru")).join(", ")}\n`;
             }
             await this.bot.api.sendMessage(this.marinaId, notifyMsg, {
               parse_mode: "HTML",
