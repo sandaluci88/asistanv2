@@ -309,7 +309,7 @@ export class GmailPollingService {
       );
       if (hasManualDeptsText) {
         (async () => {
-          const reportCaption = `📝 <b>Sipariş Raporu</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
+          const reportCaption = `📝 <b>Отчет по заказу</b>\n\n${visualReport}\n\n<b>Ожидается назначение сотрудников:</b>`;
           console.log(
             `🚀 [FLOW] (Text) Manuel dept atama UI gönderiliyor... (${order.orderNumber})`,
           );

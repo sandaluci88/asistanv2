@@ -359,12 +359,12 @@ export class CallbackHandler {
       this.waitingForSplitInput.set(ctx.from.id, { draftId, dept });
 
       await ctx.editMessageText(
-        `📊 <b>${dept} Dağıtımı</b>\n` +
-          `Toplam Adet: <b>${totalQty}</b>\n` +
-          `Personeller: <i>${staffNames}</i>\n\n` +
-          `Lütfen miktarları şu formatta girin:\n` +
-          `<code>İsim: Miktar, İsim: Miktar</code>\n\n` +
-          `Örnek: <code>Dikiş Test 1: 15, Dikiş Test 2: 15</code>`,
+        `📊 <b>${dept} — Распределение</b>\n` +
+          `Общее количество: <b>${totalQty}</b>\n` +
+          `Персонал: <i>${staffNames}</i>\n\n` +
+          `Введите количество в формате:\n` +
+          `<code>Имя: Количество, Имя: Количество</code>\n\n` +
+          `Пример: <code>Almira: 15, Natalya: 15</code>`,
         { parse_mode: "HTML" },
       );
       await ctx.answerCallbackQuery();
