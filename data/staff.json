@@ -1,79 +1,79 @@
 [
   {
-    "id": "test-karkas-1",
-    "telegramId": 6030287709,
+    "id": "karkas-1",
+    "telegramId": 1030595483,
     "name": "Bekbergen",
     "department": "Karkas Üretimi",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-karkas-2",
-    "telegramId": 6030287709,
+    "id": "karkas-2",
+    "telegramId": 1030595483,
     "name": "Rustem",
     "department": "Karkas Üretimi",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-metal-1",
-    "telegramId": 6030287709,
+    "id": "metal-1",
+    "telegramId": 1030595483,
     "name": "Dmitriy",
     "department": "Metal Üretimi",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-boya-1",
-    "telegramId": 6030287709,
+    "id": "boya-1",
+    "telegramId": 1030595483,
     "name": "Timur",
     "department": "Boyahane",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-doseme-1",
-    "telegramId": 6030287709,
+    "id": "doseme-1",
+    "telegramId": 1030595483,
     "name": "Aleksey",
     "department": "Döşemehane",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-doseme-2",
-    "telegramId": 6030287709,
+    "id": "doseme-2",
+    "telegramId": 1030595483,
     "name": "Sergey",
     "department": "Döşemehane",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-doseme-3",
-    "telegramId": 6030287709,
+    "id": "doseme-3",
+    "telegramId": 1030595483,
     "name": "Viktor",
     "department": "Döşemehane",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-dikis-1",
-    "telegramId": 6030287709,
+    "id": "dikis-1",
+    "telegramId": 1030595483,
     "name": "Almira",
     "department": "Dikişhane",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-dikis-2",
-    "telegramId": 6030287709,
+    "id": "dikis-2",
+    "telegramId": 1030595483,
     "name": "Natalya",
     "department": "Dikişhane",
     "role": "usta",
     "language": "ru"
   },
   {
-    "id": "test-marina",
-    "telegramId": 6030287709,
+    "id": "marina",
+    "telegramId": 1030595483,
     "name": "Marina",
     "department": "Koordinasyon",
     "role": "Coordinator",

@@ -195,9 +195,8 @@ export class GmailPollingService {
           console.error("❌ [FLOW] Arşivleme hatası:", archErr);
         }
 
-        this.orderService
-          .saveToVisualMemory(order)
-          .catch((e: any) => logger.warn({ err: e }, "⚠️ Görsel hafıza hatası."));
+        // Görsel hafıza artık parseAndCreateOrder içinde fire-and-forget olarak çalışıyor
+        // Duplicate çağrı kaldırıldı
 
         await this.handleOrderDistribution(order, images, excelRows);
         excelProcessed = true;
@@ -414,6 +413,13 @@ export class GmailPollingService {
         deptsToAssign.forEach((d) => {
           keyboard
             .text(getDeptButtonLabel(d, false) as string, `select_dept_staff:${draftId}|${d}`)
+            .row();
+        });
+
+        // Bölüştürme butonları (Dikişhane, Döşemehane)
+        deptsToAssign.forEach((d) => {
+          keyboard
+            .text(`📊 Разделить: ${translateDepartment(d, "ru")}`, `split_mode:${draftId}:${d}`)
             .row();
         });
 

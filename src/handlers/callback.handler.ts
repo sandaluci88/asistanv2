@@ -150,6 +150,13 @@ export class CallbackHandler {
           .row();
       });
 
+      // Bölüştürme butonları (atanmamış manuel departmanlar için)
+      remainingDepts.forEach((d: any) => {
+        keyboard
+          .text(`📊 Разделить: ${translateDepartment(d, "ru")}`, `split_mode:${draftId}:${d}`)
+          .row();
+      });
+
       if (remainingDepts.length === 0) {
         keyboard
           .text("🚀 ЗАПУСТИТЬ ПРОИЗВОДСТВО", `finalize_dist:${draftId}`)

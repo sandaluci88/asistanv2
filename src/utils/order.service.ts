@@ -170,9 +170,8 @@ export class OrderService {
               console.warn("⚠️ Detay çevirisi atlandı:", e);
             }
 
-            try {
-              await this.saveToVisualMemory(excelOrder);
-            } catch (_) {}
+            // Fire-and-forget: görsel hafıza dağıtımı engellemesin
+            this.saveToVisualMemory(excelOrder).catch(() => {});
             await this.logOrder(excelOrder);
 
             logger.info(
@@ -536,12 +535,10 @@ export class OrderService {
 
       await this.repository.save(order);
 
-      // Görsel hafıza - Artık ana sipariş DB'de olduğu için güvenle çalışabilir
-      try {
-        await this.saveToVisualMemory(order);
-      } catch (e) {
+      // Görsel hafıza - Fire-and-forget: dağıtım akışını engellemesin
+      this.saveToVisualMemory(order).catch((e) => {
         console.error("⚠️ Görsel hafıza kaydı atlandı (hata):", e);
-      }
+      });
 
       await this.logOrder(order);
       return order;
@@ -625,9 +622,8 @@ export class OrderService {
 
       await this.repository.save(excelOrder);
 
-      try {
-        await this.saveToVisualMemory(excelOrder);
-      } catch (_) {}
+      // Fire-and-forget: görsel hafıza dağıtımı engellemesin
+      this.saveToVisualMemory(excelOrder).catch(() => {});
       await this.logOrder(excelOrder);
 
       logger.info(
