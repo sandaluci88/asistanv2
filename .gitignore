@@ -28,7 +28,7 @@ data/*.log
 !brainstorming_report.md
 !socratic_check.md
 !docs/
-!kaya/
+!memory/core_memory.md
 
 # Debug
 npm-debug.log*

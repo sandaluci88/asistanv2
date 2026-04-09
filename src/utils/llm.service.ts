@@ -70,7 +70,7 @@ export class OpenRouterService {
 
   private async loadSystemPrompt(): Promise<void> {
     const promptPath =
-      process.env.SYSTEM_PROMPT_PATH || "./kaya/memory/core_memory.md";
+      process.env.SYSTEM_PROMPT_PATH || "./memory/core_memory.md";
     const absolutePath = path.resolve(process.cwd(), promptPath);
 
     try {
