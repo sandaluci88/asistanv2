@@ -1,1 +1,83 @@
-[]
+[
+  {
+    "id": "test-karkas-1",
+    "telegramId": 6030287709,
+    "name": "Bekbergen",
+    "department": "Karkas Üretimi",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-karkas-2",
+    "telegramId": 6030287709,
+    "name": "Rustem",
+    "department": "Karkas Üretimi",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-metal-1",
+    "telegramId": 6030287709,
+    "name": "Dmitriy",
+    "department": "Metal Üretimi",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-boya-1",
+    "telegramId": 6030287709,
+    "name": "Timur",
+    "department": "Boyahane",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-doseme-1",
+    "telegramId": 6030287709,
+    "name": "Aleksey",
+    "department": "Döşemehane",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-doseme-2",
+    "telegramId": 6030287709,
+    "name": "Sergey",
+    "department": "Döşemehane",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-doseme-3",
+    "telegramId": 6030287709,
+    "name": "Viktor",
+    "department": "Döşemehane",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-dikis-1",
+    "telegramId": 6030287709,
+    "name": "Almira",
+    "department": "Dikişhane",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-dikis-2",
+    "telegramId": 6030287709,
+    "name": "Natalya",
+    "department": "Dikişhane",
+    "role": "usta",
+    "language": "ru"
+  },
+  {
+    "id": "test-marina",
+    "telegramId": 6030287709,
+    "name": "Marina",
+    "department": "Koordinasyon",
+    "role": "Coordinator",
+    "language": "ru",
+    "isMarina": true
+  }
+]

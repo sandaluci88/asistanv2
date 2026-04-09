@@ -65,6 +65,7 @@ export class CallbackHandler {
       async (ctx) => {
         const draftId = ctx.match[1] as string;
         const deptName = ctx.match[2] as string;
+        console.log(`📋 [SELECT] Departman seçimi: ${deptName} (draft: ${draftId})`);
         const staffList = this.staffService.getStaffByDepartment(deptName);
         if (staffList.length === 0) {
           return ctx.answerCallbackQuery(
@@ -95,6 +96,7 @@ export class CallbackHandler {
       const draftId = ctx.match[1] as string;
       const deptName = ctx.match[2] as string;
       const staffName = ctx.match[3] as string;
+      console.log(`👤 [AW] Personel atama: ${staffName} → ${deptName} (draft: ${draftId})`);
 
       const draft = this.draftOrderService.getDraft(draftId);
       if (!draft)
@@ -110,9 +112,24 @@ export class CallbackHandler {
 
       await ctx.answerCallbackQuery(`✅ ${staffName} назначен(а).`);
 
-      const visualReport = this.orderService.generateVisualTable(draft.order);
-      const keyboard = new InlineKeyboard();
+      // HEMEN bu departmana PDF iş emri gönder
+      try {
+        const report = await this.distributionService.processOrderDistribution(
+          draft.order,
+          draft.images || [],
+          draft.excelRows || [],
+          undefined,
+          [deptName],
+          false,
+        );
+        if (report.success.length > 0) {
+          console.log(`📤 [AW] PDF gönderildi: ${deptName} → ${staffName}`);
+        }
+      } catch (err) {
+        console.error(`❌ [AW] PDF gönderme hatası (${deptName}):`, err);
+      }
 
+      // Kalan manuel departmanları göster
       const remainingDepts = Array.from(
         new Set(
           draft.order.items
@@ -123,6 +140,7 @@ export class CallbackHandler {
         ),
       );
 
+      const keyboard = new InlineKeyboard();
       remainingDepts.forEach((d: any) => {
         keyboard
           .text(
@@ -139,8 +157,9 @@ export class CallbackHandler {
       }
       keyboard.text("❌ Отменить", `reject_order:${draftId}`);
 
+      const visualReport = this.orderService.generateVisualTable(draft.order);
       await ctx.editMessageText(
-        `✅ ${deptName} → <b>${staffName}</b> назначен(а).\n\n${visualReport}`,
+        `✅ ${deptName} → <b>${staffName}</b> назначен(а). PDF отправлен.\n\n${visualReport}`,
         { parse_mode: "HTML", reply_markup: keyboard },
       );
     });
@@ -150,6 +169,7 @@ export class CallbackHandler {
   private registerFinalizeDistribution() {
     this.bot.callbackQuery(/^finalize_dist:(.+)$/, async (ctx) => {
       const draftId = ctx.match[1] as string;
+      console.log(`🚀 [FINALIZE] Dağıtım başlatılıyor (draft: ${draftId})`);
       const draft = this.draftOrderService.getDraft(draftId);
       if (!draft) return ctx.answerCallbackQuery("❌ Черновик не найден.");
 
