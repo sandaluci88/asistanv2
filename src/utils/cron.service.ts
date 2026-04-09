@@ -316,8 +316,13 @@ export class CronService {
     }
 
     const staff = this.staffService.getAllStaff();
+    const bossId = Number((process.env.TELEGRAM_BOSS_ID || "").trim());
     for (const member of staff) {
       if (!member.telegramId) continue;
+      // Patron'a personel kontrol mesajı gönderme
+      if (member.telegramId === bossId) continue;
+      // Marina'ya da personel kontrol mesajı gönderme (koordinatördür, usta değil)
+      if (this.staffService.isCoordinator(member.telegramId)) continue;
       let message = "";
       switch (type) {
         case "morning":
