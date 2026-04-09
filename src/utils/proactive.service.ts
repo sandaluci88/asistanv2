@@ -38,6 +38,13 @@ export class ProactiveService {
 
       // 2. Operasyonel Kontrol (Görev Takibi)
       const activeItems = this.orderService.getActiveTrackingItems();
+
+      // ORDER GUARD: Aktif sipariş yoksa ve kritik hata yoksa sessiz kal
+      if (activeItems.length === 0 && criticalErrors.length === 0) {
+        logger.info("📭 Aktif sipariş yok ve hata yok, heartbeat sessiz kalıyor.");
+        return;
+      }
+
       const pendingItems = activeItems.filter(
         (entry) =>
           ((entry.item.status as any) === "bekliyor" ||

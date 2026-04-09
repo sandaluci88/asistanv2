@@ -308,6 +308,13 @@ export class CronService {
   }
 
   async sendStaffControlMessage(type: "morning" | "noon" | "evening") {
+    // ORDER GUARD: Aktif sipariş yoksa personel kontrol mesajı gönderme
+    const activeItems = this.orderService.getActiveTrackingItems();
+    if (activeItems.length === 0) {
+      console.log("📭 Aktif sipariş yok, personel kontrol mesajı atlanıyor.");
+      return;
+    }
+
     const staff = this.staffService.getAllStaff();
     for (const member of staff) {
       if (!member.telegramId) continue;
@@ -346,6 +353,9 @@ export class CronService {
 
   async checkFabricStatus() {
     const orders = this.orderService.getOrders();
+    // ORDER GUARD: Sipariş yoksa kumaş takip atla
+    if (!orders || orders.length === 0) return;
+
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     for (const order of orders) {
@@ -495,6 +505,9 @@ export class CronService {
   async checkDeliveryApproaching() {
     try {
       const orders = this.orderService.getOrders();
+      // ORDER GUARD: Sipariş yoksa teslimat kontrolü atla
+      if (!orders || orders.length === 0) return;
+
       const now = new Date();
       now.setHours(0, 0, 0, 0);
 
