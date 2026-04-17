@@ -317,22 +317,39 @@ export class MessageHandler {
       "listele",
       "özet",
       "liste",
+      "varmı",
+      "var mı",
+      "siparişler",
+      "neler var",
     ];
     const isStatusQuery =
       (lowerText.includes("sipariş") ||
         lowerText.includes("muşteri") ||
-        lowerText.includes("müşteri")) &&
-      statusKeywords.some((kw) => lowerText.includes(kw));
+        lowerText.includes("müşteri") ||
+        lowerText.includes("işler") ||
+        lowerText.includes("isler")) &&
+      (statusKeywords.some((kw) => lowerText.includes(kw)) ||
+        lowerText.endsWith("?") ||
+        lowerText.includes("var mı") ||
+        lowerText.includes("varmı"));
 
     if (isStatusQuery && isBoss) {
       await this.handleOrderStatusQuery(ctx, text, isBoss);
       return;
     }
 
-    // Supabase'den bağlam sorgula (Opsiyonel/Geliştirilecek)
-    let context = "";
-    // Şimdilik sadece bağlantı loguna ekliyoruz, ilerde embedding araması eklenebilir.
-    context = "Sandaluci üretim veritabanı aktif (Supabase PGVector).";
+    // Supabase'den gerçek zamanlı bağlam sorgula
+    const activeOrders = this.orderService.getOrders().filter(o => o.status !== 'archived');
+    const orderCount = activeOrders.length;
+    
+    let context = `Sandaluci üretim veritabanı aktif. Şu an sistemde ${orderCount} adet AKTİF sipariş bulunmaktadır.`;
+    
+    if (orderCount === 0) {
+      context += "\n[SİSTEM UYARISI] SİSTEMDE HİÇ SİPARİŞ YOK. Ayça 'Sipariş-Yok Kuralı'na (ORDER GUARD) kesinlikle uymalıdır. Üretimle ilgili hayali bilgi verme, soru sorma.";
+    } else {
+      const orderSummary = activeOrders.map(o => `${o.orderNumber} (${o.customerName})`).join(", ");
+      context += `\nAktif Siparişler: ${orderSummary}`;
+    }
 
     // 1. Get recent chat history (last 3 days)
     const history = await memoryService.getHistory(ctx.chat?.id || "default");

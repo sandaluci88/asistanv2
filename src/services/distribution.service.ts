@@ -2,7 +2,6 @@ import { Bot, InputFile } from "grammy";
 import { OrderService } from "../utils/order.service";
 import { StaffService } from "../utils/staff.service";
 import { translateDepartment } from "../utils/i18n";
-import { isManualDept } from "../utils/department.utils";
 import { logger } from "../utils/logger";
 
 /**

@@ -57,6 +57,11 @@ src/
 - **Üretim Takibi** — 20 gün sonra "Bitti mi?" sorgusu
 - **Sabah/Akşam Brifingi** — Personel kontrol mesajları
 
+### Gelişmiş AI Güvenlik (Hallucination Prevention)
+- **Context Grounding** — Her mesajda veritabanındaki aktif sipariş adedi LLM'e (Ayça) somut veri olarak sunulur.
+- **Order Guard (Sipariş-Yok Kuralı)** — Sistemde aktif sipariş sayısı 0 ise, LLM context'ine otomatik olarak hayali veri üretmesini engelleyen kesin sistem talimatları enjekte edilir.
+- **Güçlendirilmiş Status Query** — Barış Bey'den gelen "Sipariş varmı?" gibi doğal dildeki sorular, LLM'e gitmeden önce DB sorgusu ile yanıtlanır.
+
 ### Dil ve Yerelleştirme
 - %100 Rusça üretim dokümanları (personel için)
 - Türkçe patron arayüzü (Barış Bey için)
