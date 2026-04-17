@@ -41,7 +41,9 @@ export class ProactiveService {
 
       // ORDER GUARD: Aktif sipariş yoksa ve kritik hata yoksa sessiz kal
       if (activeItems.length === 0 && criticalErrors.length === 0) {
-        logger.info("📭 Aktif sipariş yok ve hata yok, heartbeat sessiz kalıyor.");
+        logger.info(
+          "📭 Aktif sipariş yok ve hata yok, heartbeat sessiz kalıyor.",
+        );
         return;
       }
 

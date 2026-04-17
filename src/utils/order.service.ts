@@ -156,12 +156,19 @@ export class OrderService {
 
             // LLM Çeviri: Türkçe detayları Rusçaya çevir (personel için)
             try {
-              const detailsToTranslate = excelOrder.items.map((item: any) => item.details || "");
-              const translations = await this.llmService.translateDetailsToRussian(detailsToTranslate);
+              const detailsToTranslate = excelOrder.items.map(
+                (item: any) => item.details || "",
+              );
+              const translations =
+                await this.llmService.translateDetailsToRussian(
+                  detailsToTranslate,
+                );
               excelOrder.items.forEach((item: any, i: number) => {
                 const translated = translations.get(i);
                 if (translated && translated !== item.details) {
-                  console.log(`🔄 [Çeviri] "${item.details?.substring(0, 40)}..." → "${translated.substring(0, 40)}..."`);
+                  console.log(
+                    `🔄 [Çeviri] "${item.details?.substring(0, 40)}..." → "${translated.substring(0, 40)}..."`,
+                  );
                   item.details = translated;
                 }
               });
@@ -520,12 +527,17 @@ export class OrderService {
 
       // LLM Çeviri: Türkçe detayları Rusçaya çevir (personel için)
       try {
-        const detailsToTranslate = order.items.map((item: any) => item.details || "");
-        const translations = await this.llmService.translateDetailsToRussian(detailsToTranslate);
+        const detailsToTranslate = order.items.map(
+          (item: any) => item.details || "",
+        );
+        const translations =
+          await this.llmService.translateDetailsToRussian(detailsToTranslate);
         order.items.forEach((item: any, i: number) => {
           const translated = translations.get(i);
           if (translated && translated !== item.details) {
-            console.log(`🔄 [Çeviri] "${item.details?.substring(0, 40)}..." → "${translated.substring(0, 40)}..."`);
+            console.log(
+              `🔄 [Çeviri] "${item.details?.substring(0, 40)}..." → "${translated.substring(0, 40)}..."`,
+            );
             item.details = translated;
           }
         });
@@ -559,7 +571,7 @@ export class OrderService {
   ): OrderDetail {
     // Derin kopya oluştur (Resim buffer'larını koruyarak)
     const subOrder: OrderDetail = { ...originalOrder };
-    
+
     // Sadece ilgili departmanın ürünlerini sakla ve miktarlarını güncelle
     subOrder.items = originalOrder.items
       .filter((item) => item.department === targetDept)
@@ -575,7 +587,6 @@ export class OrderService {
 
     return subOrder;
   }
-
 
   /**
    * Doğrudan bir Excel buffer'ını sipariş olarak işler.
@@ -734,9 +745,6 @@ export class OrderService {
     const labelOrder = t("order_label", lang);
     const labelTermin = t("delivery_label", lang);
     const labelProduct = t("product_label", lang);
-    const labelDept = t("dept_label", lang);
-    const labelWorker = t("worker_label", lang);
-    const labelDetails = t("details_label", lang);
 
     let table = `<b>${title}</b>\n`;
     table += `👤 ${labelCustomer}: <code>${customer}</code>\n`;

@@ -170,8 +170,8 @@ export class GmailService {
         try {
           await client.logout();
           logger.info("📡 IMAP: Bağlantı güvenli şekilde kapatıldı.");
-        } catch (logoutErr) {
-          logger.error({ err: logoutErr }, "⚠️ IMAP: Logout hatası");
+        } catch (_) {
+          logger.error({ err: _ }, "⚠️ IMAP: Logout hatası");
         }
       }
     }
@@ -228,7 +228,7 @@ export class GmailService {
       if (isConnected) {
         try {
           await client.logout();
-        } catch (logoutErr) {
+        } catch (_) {
           // ignore
         }
       }

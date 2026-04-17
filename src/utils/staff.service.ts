@@ -306,7 +306,7 @@ export class StaffService {
 
     try {
       await this.loadStaffFromSupabase();
-    } catch (e) {
+    } catch (_) {
       // hata loglanır
     }
   }
@@ -455,7 +455,7 @@ export class StaffService {
     }
     try {
       await this.loadStaffFromSupabase();
-    } catch (e) {
+    } catch (_) {
       console.warn("⚠️ Excel sonrası personel DB'den tazelenemedi.");
     }
     return { count };

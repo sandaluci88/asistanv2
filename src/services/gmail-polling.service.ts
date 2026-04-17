@@ -58,9 +58,7 @@ export class GmailPollingService {
 
     setInterval(async () => {
       if (this.isProcessingEmail) {
-        logger.warn(
-          "⏳ Önceki e-posta işleme henüz bitmedi, döngü atlanıyor.",
-        );
+        logger.warn("⏳ Önceki e-posta işleme henüz bitmedi, döngü atlanıyor.");
         return;
       }
       this.isProcessingEmail = true;
@@ -74,12 +72,9 @@ export class GmailPollingService {
         }
         logger.info("🔍 Gmail kontrol ediliyor...");
 
-        await this.gmailService.processUnreadMessages(
-          30,
-          async (msg: any) => {
-            await this.processMessage(msg);
-          },
-        );
+        await this.gmailService.processUnreadMessages(30, async (msg: any) => {
+          await this.processMessage(msg);
+        });
       } catch (e) {
         logger.error({ err: e }, "Gmail check error");
       } finally {
@@ -98,9 +93,7 @@ export class GmailPollingService {
     this.processedUids.add(msg.uid.toString());
     this.saveProcessedUids();
 
-    logger.info(
-      `📩 Yeni e-posta işleniyor: ${msg.subject} (UID: ${msg.uid})`,
-    );
+    logger.info(`📩 Yeni e-posta işleniyor: ${msg.subject} (UID: ${msg.uid})`);
 
     const emailSummary = `📧 <b>Yeni E-posta</b> \n\n<b>Gönderen:</b> ${OrderService.escapeHTML(msg.from)}\n<b>Konu:</b> ${OrderService.escapeHTML(msg.subject)}`;
     logger.info(`💬 Telegram bildirimi gönderiliyor: ${this.chatId}`);
@@ -172,7 +165,10 @@ export class GmailPollingService {
         );
 
         if (!order) {
-          logger.warn({ filename }, "⚠️ Sipariş ayrıştırılamadı (order is null)");
+          logger.warn(
+            { filename },
+            "⚠️ Sipariş ayrıştırılamadı (order is null)",
+          );
           continue;
         }
 
@@ -203,8 +199,7 @@ export class GmailPollingService {
       } catch (excelErr) {
         const errMsg =
           excelErr instanceof Error ? excelErr.message : String(excelErr);
-        const stack =
-          excelErr instanceof Error ? excelErr.stack : undefined;
+        const stack = excelErr instanceof Error ? excelErr.stack : undefined;
         logger.error(
           { err: excelErr, filename, stack, uid: msg.uid },
           `❌ Excel işleme hatası (${filename}): ${errMsg}`,
@@ -222,7 +217,10 @@ export class GmailPollingService {
     const hasContent = msg.content && msg.content.trim().length >= 1;
 
     if (!hasContent && !hasImage && !hasAttch) {
-      logger.warn({ uid: msg.uid }, "⚠️ Sipariş içeriği veya resim bulunamadı, atlanıyor.");
+      logger.warn(
+        { uid: msg.uid },
+        "⚠️ Sipariş içeriği veya resim bulunamadı, atlanıyor.",
+      );
       return;
     }
 
@@ -255,7 +253,10 @@ export class GmailPollingService {
 
       deptsToAssign.forEach((d) => {
         keyboard
-          .text(getDeptButtonLabel(d, false) as string, `select_dept_staff:${draftId}|${d}`)
+          .text(
+            getDeptButtonLabel(d, false) as string,
+            `select_dept_staff:${draftId}|${d}`,
+          )
           .row();
       });
 
@@ -275,14 +276,15 @@ export class GmailPollingService {
             console.log(
               `🚀 [FLOW] (Text) Otomatik birimler işleniyor... (${order.orderNumber})`,
             );
-            const report = await this.distributionService.processOrderDistribution(
-              order,
-              images,
-              [],
-              undefined,
-              autoDepts,
-              false,
-            );
+            const report =
+              await this.distributionService.processOrderDistribution(
+                order,
+                images,
+                [],
+                undefined,
+                autoDepts,
+                false,
+              );
             if (report.failed.length > 0) {
               logger.error(
                 { orderNumber: order.orderNumber, failedDepts: report.failed },
@@ -323,7 +325,10 @@ export class GmailPollingService {
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      logger.error({ err, uid: msg.uid }, `❌ Sipariş analiz hatası (Text): ${errMsg}`);
+      logger.error(
+        { err, uid: msg.uid },
+        `❌ Sipariş analiz hatası (Text): ${errMsg}`,
+      );
     }
   }
 
@@ -361,14 +366,15 @@ export class GmailPollingService {
           console.log(
             `🚀 [FLOW] Otomatik birimler işleniyor... (${order.orderNumber})`,
           );
-          const report = await this.distributionService.processOrderDistribution(
-            order,
-            images,
-            excelRows,
-            undefined,
-            autoDepts,
-            false,
-          );
+          const report =
+            await this.distributionService.processOrderDistribution(
+              order,
+              images,
+              excelRows,
+              undefined,
+              autoDepts,
+              false,
+            );
           const totalDepts = report.success.length + report.failed.length;
           if (totalDepts > 0) {
             let notifyMsg = `🚀 <b>Автоматическое распределение:</b>\n`;
@@ -412,14 +418,20 @@ export class GmailPollingService {
 
         deptsToAssign.forEach((d) => {
           keyboard
-            .text(getDeptButtonLabel(d, false) as string, `select_dept_staff:${draftId}|${d}`)
+            .text(
+              getDeptButtonLabel(d, false) as string,
+              `select_dept_staff:${draftId}|${d}`,
+            )
             .row();
         });
 
         // Bölüştürme butonları (Dikişhane, Döşemehane)
         deptsToAssign.forEach((d) => {
           keyboard
-            .text(`📊 Разделить: ${translateDepartment(d, "ru")}`, `split_mode:${draftId}:${d}`)
+            .text(
+              `📊 Разделить: ${translateDepartment(d, "ru")}`,
+              `split_mode:${draftId}:${d}`,
+            )
             .row();
         });
 
@@ -437,7 +449,11 @@ export class GmailPollingService {
           await this.bot.api.sendPhoto(
             this.marinaId,
             new InputFile(pdfPreviewImg, "preview.png"),
-            { caption: reportCaption, parse_mode: "HTML", reply_markup: keyboard },
+            {
+              caption: reportCaption,
+              parse_mode: "HTML",
+              reply_markup: keyboard,
+            },
           );
         } else {
           await this.bot.api.sendMessage(this.marinaId, reportCaption, {

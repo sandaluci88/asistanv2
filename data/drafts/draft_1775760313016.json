@@ -1,0 +1,223 @@
+{
+  "order": {
+    "id": "1775760263705",
+    "orderNumber": "SD-000011",
+    "customerName": "Маржан, город Жетисай",
+    "deliveryDate": "30 IS GUNU",
+    "items": [
+      {
+        "id": "1775760263705_0",
+        "product": "Стул обеденный 274",
+        "department": "Karkas Üretimi",
+        "quantity": 30,
+        "details": "Цвет: Цвет каркаса 72 Kouy Ceviz | В ПРОИЗВОДСТВО, КАЖДЫЙ СТУЛ ЧЕТЫРЕ НОЖКИ, НОЖКИ ЗАКАЗАТЬ У РУСТЕМА ИЗ БЕРЁЗЫ, ДЛЯ СПИНКИ ЗАКУПИТЬ ФАНЕРУ 3ММ 150*150, СПИНКА БУДЕТ ПРЕССОВАТЬСЯ, ЭТО СДЕЛАЕТ БЕКБЕРГЕН. ИЗ 3 ЛИСТОВ ФАНЕРЫ 3ММ ПОЛУЧИТСЯ ТРИ СПИНКИ | ДОПОЛНИТЕЛЬНО УКРЕПИТЬ НОЖКИ",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 9,
+        "paintDetails": {
+          "name": "Цвет каркаса 72 Kouy Ceviz"
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "imageUrl": "/data/images/2026-04-09/1775760263705_1775760263705_0________________274_1775760313014.png",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_0.bin"
+      },
+      {
+        "id": "1775760263705_1",
+        "product": "Стул обеденный 274",
+        "department": "Boyahane",
+        "quantity": 30,
+        "details": "Цвет: Цвет каркаса 72 Kouy Ceviz",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 9,
+        "paintDetails": {
+          "name": "Цвет каркаса 72 Kouy Ceviz"
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_1.bin"
+      },
+      {
+        "id": "1775760263705_2",
+        "product": "Стул обеденный 274",
+        "department": "Kumaş",
+        "quantity": 30,
+        "details": "Ткань: Цвет ткани Domiart River, color 2 Tofu | Итого: 45 м",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 9,
+        "fabricDetails": {
+          "name": "Цвет ткани Domiart River, color 2 Tofu",
+          "amount": 45,
+          "arrived": false
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_2.bin"
+      },
+      {
+        "id": "1775760263705_3",
+        "product": "Стул обеденный 274",
+        "department": "Dikişhane",
+        "quantity": 30,
+        "details": "Шитьё: Шитьё спинки и сиденья",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 9,
+        "fabricDetails": {
+          "name": "Цвет ткани Domiart River, color 2 Tofu",
+          "amount": 45,
+          "arrived": false
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_3.bin"
+      },
+      {
+        "id": "1775760263705_4",
+        "product": "Стул обеденный 274",
+        "department": "Döşemehane",
+        "quantity": 30,
+        "details": "Обивка: Выполнить | Ткань: Цвет ткани Domiart River, color 2 Tofu",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 9,
+        "fabricDetails": {
+          "name": "Цвет ткани Domiart River, color 2 Tofu",
+          "amount": 45,
+          "arrived": false
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_4.bin"
+      },
+      {
+        "id": "1775760263705_5",
+        "product": "Стул обеденный Dupe (A0376)",
+        "department": "Karkas Üretimi",
+        "quantity": 30,
+        "details": "Цвет: Цвет каркаса 72 Kouy Ceviz | Заказ для отдела деревянных каркасов",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 10,
+        "paintDetails": {
+          "name": "Цвет каркаса 72 Kouy Ceviz"
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_5.bin"
+      },
+      {
+        "id": "1775760263705_6",
+        "product": "Стул обеденный Dupe (A0376)",
+        "department": "Boyahane",
+        "quantity": 30,
+        "details": "Цвет: Цвет каркаса 72 Kouy Ceviz",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 10,
+        "paintDetails": {
+          "name": "Цвет каркаса 72 Kouy Ceviz"
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_6.bin"
+      },
+      {
+        "id": "1775760263705_7",
+        "product": "Стул обеденный Dupe (A0376)",
+        "department": "Kumaş",
+        "quantity": 30,
+        "details": "Ткань: Цвет ткани Domiart River, color 11 olive | Итого: 45 м",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 10,
+        "fabricDetails": {
+          "name": "Цвет ткани Domiart River, color 11 olive",
+          "amount": 45,
+          "arrived": false
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_7.bin"
+      },
+      {
+        "id": "1775760263705_8",
+        "product": "Стул обеденный Dupe (A0376)",
+        "department": "Dikişhane",
+        "quantity": 30,
+        "details": "Шитьё: Без шитья | Нить: Серый IO 001",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 10,
+        "fabricDetails": {
+          "name": "Цвет ткани Domiart River, color 11 olive",
+          "amount": 45,
+          "arrived": false
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_8.bin"
+      },
+      {
+        "id": "1775760263705_9",
+        "product": "Стул обеденный Dupe (A0376)",
+        "department": "Döşemehane",
+        "quantity": 30,
+        "details": "Обивка: Выполнить | Ткань: Цвет ткани Domiart River, color 11 olive",
+        "source": "Production",
+        "status": "bekliyor",
+        "rowIndex": 10,
+        "fabricDetails": {
+          "name": "Цвет ткани Domiart River, color 11 olive",
+          "amount": 45,
+          "arrived": false
+        },
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_9.bin"
+      },
+      {
+        "id": "1775760263705_10",
+        "product": "plastik Стул",
+        "department": "Satınalma",
+        "quantity": 50,
+        "details": "Внешняя закупка (пластик).",
+        "source": "External",
+        "status": "bekliyor",
+        "rowIndex": 11,
+        "imageBuffer": null,
+        "imageExtension": "png",
+        "createdAt": "2026-04-09T18:44:23.705Z",
+        "updatedAt": "2026-04-09T18:44:23.705Z",
+        "_imageBufferPath": "C:\\Users\\user\\Downloads\\Z.ai_claude code\\asistan v2\\data\\drafts\\draft_1775760313016_images\\item_1775760263705_10.bin"
+      }
+    ],
+    "status": "new",
+    "createdAt": "2026-04-09T18:44:23.705Z",
+    "updatedAt": "2026-04-09T18:44:23.705Z"
+  },
+  "images": [],
+  "assignments": {}
+}

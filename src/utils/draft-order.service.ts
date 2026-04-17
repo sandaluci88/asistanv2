@@ -132,8 +132,6 @@ export class DraftOrderService {
     if (draft) {
       draft.assignments[dept] = telegramId;
       // Buffer'ları tekrar ayırarak kaydet
-      const images = draft.images || [];
-      const excelRows = draft.excelRows;
       // Sadece assignments'ı güncelle, order ve images'ı değiştirmeden kaydet
       const filePath = this.draftPath(id);
       const rawData = JSON.parse(fs.readFileSync(filePath, "utf-8"));

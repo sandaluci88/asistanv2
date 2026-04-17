@@ -45,7 +45,7 @@ const COL = {
   TESLIM: 19,
 };
 
-const HEADER_ROW = 8;
+// const HEADER_ROW = 8;
 const DATA_START_ROW = 9;
 
 function cellVal(row: ExcelJS.Row, col: number): string {
@@ -501,8 +501,8 @@ function makeItem(
     fabricDetails: fabricDetails
       ? { ...fabricDetails, arrived: false }
       : undefined,
-    paintDetails: paintDetails 
-      ? { name: translateProductionTerm(paintDetails.name) } 
+    paintDetails: paintDetails
+      ? { name: translateProductionTerm(paintDetails.name) }
       : undefined,
     imageBuffer,
     imageExtension,

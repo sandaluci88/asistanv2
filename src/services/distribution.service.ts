@@ -186,8 +186,7 @@ export class DistributionService {
         if (sentCount > 0) {
           report.success.push(currentDept);
         } else {
-          const failReason =
-            lastPdfError || "Tüm alıcılara gönderim başarısız";
+          const failReason = lastPdfError || "Tüm alıcılara gönderim başarısız";
           logger.error(
             { dept: currentDept, reason: failReason, targetIds },
             `❌ ${currentDept} departmanına gönderim tümüyle başarısız: ${failReason}`,

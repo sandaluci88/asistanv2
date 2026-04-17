@@ -44,7 +44,7 @@ export class SelfCleanupService {
           try {
             fs.unlinkSync(filePath);
             deletedItems.push(`Temp: ${file}`);
-          } catch (e) {
+          } catch (_) {
             // Dosya o an kullanılıyor olabilir, geç
           }
         }

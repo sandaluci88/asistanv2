@@ -33,7 +33,7 @@ export class VoiceService {
   public async transcribeVoiceMessage(
     ctx: Context,
     fileId: string,
-    lang: string = "auto",
+    _lang: string = "auto",
   ): Promise<string | null> {
     if (!this.openai) {
       logger.error("❌ OpenRouter API eksik! Sesli mesaj işlenemez.");
@@ -131,7 +131,7 @@ export class VoiceService {
       if (tempFilePath && fs.existsSync(tempFilePath)) {
         try {
           fs.unlinkSync(tempFilePath);
-        } catch (e) {}
+        } catch (_) {}
       }
     }
   }

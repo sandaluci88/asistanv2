@@ -300,7 +300,7 @@ export class PDFService {
           if (buffer) {
             try {
               doc.image(buffer, 40, currentY + 10, { fit: [80, 80] });
-            } catch (_e) {
+            } catch (_) {
               // Silently skip image if it cannot be embedded
             }
           }

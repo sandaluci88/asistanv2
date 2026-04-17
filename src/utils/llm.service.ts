@@ -80,7 +80,9 @@ export class OpenRouterService {
           `✅ [LLM] Sistem promptu yüklendi: ${absolutePath} (${this.systemPrompt.length} karakter)`,
         );
       } else {
-        console.warn(`⚠️ [LLM] Sistem prompt dosyası bulunamadı: ${absolutePath}`);
+        console.warn(
+          `⚠️ [LLM] Sistem prompt dosyası bulunamadı: ${absolutePath}`,
+        );
         this.systemPrompt = "Sen profesyonel bir şirket asistanısın.";
       }
     } catch (error) {
@@ -134,7 +136,8 @@ export class OpenRouterService {
           this.client.chat.completions.create(
             {
               model: (
-                process.env.OPENROUTER_MODEL || "google/gemini-2.0-pro-exp-02-05"
+                process.env.OPENROUTER_MODEL ||
+                "google/gemini-2.0-pro-exp-02-05"
               ).trim(),
               messages,
             },

@@ -363,7 +363,9 @@ export class CronService {
 
       const marina = this.staffService.getMarina();
       if (!marina || !marina.telegramId) {
-        console.warn("⚠️ Marina bulunamadı, kumaş/dış alım hatırlatması atlanıyor.");
+        console.warn(
+          "⚠️ Marina bulunamadı, kumaş/dış alım hatırlatması atlanıyor.",
+        );
         return;
       }
 
@@ -389,10 +391,7 @@ export class CronService {
         });
 
         keyboard
-          .text(
-            t("btn_fabric_arrived", lang),
-            `fabric_purchase_ok:${item.id}`,
-          )
+          .text(t("btn_fabric_arrived", lang), `fabric_purchase_ok:${item.id}`)
           .text(
             t("btn_fabric_not_arrived", lang),
             `fabric_purchase_pending:${item.id}`,

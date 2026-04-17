@@ -45,6 +45,7 @@ src/
 ## Öne Çıkan Özellikler
 
 ### Sipariş Akışı
+
 1. **Gmail Entegrasyonu** — Her 60 saniyede okunmamış mailler kontrol edilir
 2. **Excel/Text Parse** — LLM ile sipariş departmanlara otomatik ayrılır
 3. **Manuel/Otomatik Dağıtım** — Dikişhane/Döşemehane manuel, diğerleri otomatik
@@ -52,17 +53,20 @@ src/
 5. **PDF İş Emirleri** — Her departmana Rusça PDF gönderimi
 
 ### Takip Sistemi
+
 - **5-3 Gün Uyarı** — Teslimata yaklaştıkça periyodik hatırlatmalar
 - **Kumaş Takibi** — 24 saatte bir kumaş durumu kontrolü
 - **Üretim Takibi** — 20 gün sonra "Bitti mi?" sorgusu
 - **Sabah/Akşam Brifingi** — Personel kontrol mesajları
 
 ### Gelişmiş AI Güvenlik (Hallucination Prevention)
+
 - **Context Grounding** — Her mesajda veritabanındaki aktif sipariş adedi LLM'e (Ayça) somut veri olarak sunulur.
 - **Order Guard (Sipariş-Yok Kuralı)** — Sistemde aktif sipariş sayısı 0 ise, LLM context'ine otomatik olarak hayali veri üretmesini engelleyen kesin sistem talimatları enjekte edilir.
 - **Güçlendirilmiş Status Query** — Barış Bey'den gelen "Sipariş varmı?" gibi doğal dildeki sorular, LLM'e gitmeden önce DB sorgusu ile yanıtlanır.
 
 ### Dil ve Yerelleştirme
+
 - %100 Rusça üretim dokümanları (personel için)
 - Türkçe patron arayüzü (Barış Bey için)
 - Çift dilli ürün adları `[TR] ... / [RU] ...`
@@ -71,16 +75,16 @@ src/
 
 ## Teknoloji Yığını
 
-| Katman | Teknoloji |
-|--------|-----------|
-| Runtime | Node.js, TypeScript |
-| Telegram | Grammy Framework |
-| Veritabanı | Supabase (PostgreSQL + pgvector) |
-| AI Engine | OpenRouter (Gemini 2.0 Pro / Qwen 3.5) |
-| Excel | ExcelJS + Özel XlsxUtils |
-| PDF | PDFKit |
-| Email | imapflow + nodemailer |
-| Loglama | Pino |
+| Katman     | Teknoloji                              |
+| ---------- | -------------------------------------- |
+| Runtime    | Node.js, TypeScript                    |
+| Telegram   | Grammy Framework                       |
+| Veritabanı | Supabase (PostgreSQL + pgvector)       |
+| AI Engine  | OpenRouter (Gemini 2.0 Pro / Qwen 3.5) |
+| Excel      | ExcelJS + Özel XlsxUtils               |
+| PDF        | PDFKit                                 |
+| Email      | imapflow + nodemailer                  |
+| Loglama    | Pino                                   |
 
 ---
 
@@ -112,46 +116,46 @@ npm test
 
 ## Ortam Değişkenleri
 
-| Değişken | Açıklama |
-|----------|----------|
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot API token |
-| `TELEGRAM_CHAT_ID` | Varsayılan sohbet ID |
-| `TELEGRAM_BOSS_ID` | Barış Bey'in Telegram ID |
-| `TELEGRAM_MARINA_ID` | Marina'nın Telegram ID |
-| `OPENROUTER_API_KEY` | OpenRouter API anahtarı |
-| `OPENROUTER_MODEL` | Kullanılacak LLM modeli |
-| `SUPABASE_URL` | Supabase proje URL |
-| `SUPABASE_KEY` | Supabase API anahtarı |
-| `GMAIL_USER` / `GMAIL_PASS` | Gmail IMAP bilgileri |
-| `SYSTEM_PROMPT_PATH` | Ayça'nın sistem prompt dosyası |
+| Değişken                    | Açıklama                       |
+| --------------------------- | ------------------------------ |
+| `TELEGRAM_BOT_TOKEN`        | Telegram Bot API token         |
+| `TELEGRAM_CHAT_ID`          | Varsayılan sohbet ID           |
+| `TELEGRAM_BOSS_ID`          | Barış Bey'in Telegram ID       |
+| `TELEGRAM_MARINA_ID`        | Marina'nın Telegram ID         |
+| `OPENROUTER_API_KEY`        | OpenRouter API anahtarı        |
+| `OPENROUTER_MODEL`          | Kullanılacak LLM modeli        |
+| `SUPABASE_URL`              | Supabase proje URL             |
+| `SUPABASE_KEY`              | Supabase API anahtarı          |
+| `GMAIL_USER` / `GMAIL_PASS` | Gmail IMAP bilgileri           |
+| `SYSTEM_PROMPT_PATH`        | Ayça'nın sistem prompt dosyası |
 
 ---
 
 ## Komutlar
 
-| Komut | Yetki | Açıklama |
-|-------|-------|----------|
-| `/start` | Herkes | Bot tanıtımı |
-| `/durum` | Patron | Üretim durumu raporu |
-| `/ajanda` | Patron | Takvim ajandası |
-| `/personel` | Patron | Personel listesi |
-| `/kayit` | Patron | Yeni personel kaydı |
-| `/sil` | Patron | Personel silme |
-| `/takip` | Patron | Üretim takip özeti |
-| `/doctor` | Patron | Sistem sağlık kontrolü |
-| `/temizlik` | Patron | Veritabanı temizleme |
-| `/dev` | Patron | Geliştirici modu |
+| Komut       | Yetki  | Açıklama               |
+| ----------- | ------ | ---------------------- |
+| `/start`    | Herkes | Bot tanıtımı           |
+| `/durum`    | Patron | Üretim durumu raporu   |
+| `/ajanda`   | Patron | Takvim ajandası        |
+| `/personel` | Patron | Personel listesi       |
+| `/kayit`    | Patron | Yeni personel kaydı    |
+| `/sil`      | Patron | Personel silme         |
+| `/takip`    | Patron | Üretim takip özeti     |
+| `/doctor`   | Patron | Sistem sağlık kontrolü |
+| `/temizlik` | Patron | Veritabanı temizleme   |
+| `/dev`      | Patron | Geliştirici modu       |
 
 ---
 
 ## Organizasyon Yapısı
 
-| Rol | Yetkili | Tanım |
-|-----|---------|-------|
-| **SuperAdmin** | Barış Bey | Sistem sahibi, tam yetkili |
-| **Koordinatör** | Marina | Üretim trafiğini yönetir |
-| **Dijital Asistan** | Ayça | AI üretim asistanı |
-| **Departmanlar** | Atölye Personeli | Karkas, Metal, Boya, Döşeme, Dikiş |
+| Rol                 | Yetkili          | Tanım                              |
+| ------------------- | ---------------- | ---------------------------------- |
+| **SuperAdmin**      | Barış Bey        | Sistem sahibi, tam yetkili         |
+| **Koordinatör**     | Marina           | Üretim trafiğini yönetir           |
+| **Dijital Asistan** | Ayça             | AI üretim asistanı                 |
+| **Departmanlar**    | Atölye Personeli | Karkas, Metal, Boya, Döşeme, Dikiş |
 
 ---
 
@@ -165,6 +169,12 @@ npm test
 - [ ] Sunucuda `git pull` ve restart yap
 - [ ] Split (bölüştürme) dağıtımını test et — Marina "📊 Разделить" butonuna basıp `Almira: 40, Natalya: 20` formatında yazmalı
 - [ ] `DEV_MODE=true` → production'da `false` yapılacak mı karar ver
+
+---
+
+## Dağıtım (Deployment) Notları
+
+- **Docker ve Canvas:** Uygulamada PDF üretimi için kullanılan `canvas` kütüphanesi, C++ ve Cairo bağımlılıkları gerektirir. `node:20-slim` imajı kullanılırken, native derlemenin (native compilation) hatasız tamamlanması için `Dockerfile` içerisindeki `apt-get` adımlarında `pkg-config` ve `build-essential` paketlerinin bulunması zorunludur. Bu bağımlılıklar eksik olduğunda dağıtım sırasında "exit code 255" hatası alınır. Bu sorun `Dockerfile` üzerinde başarıyla çözülmüştür.
 
 ---
 

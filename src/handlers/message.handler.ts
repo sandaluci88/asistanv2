@@ -339,15 +339,20 @@ export class MessageHandler {
     }
 
     // Supabase'den gerçek zamanlı bağlam sorgula
-    const activeOrders = this.orderService.getOrders().filter(o => o.status !== 'archived');
+    const activeOrders = this.orderService
+      .getOrders()
+      .filter((o) => o.status !== "archived");
     const orderCount = activeOrders.length;
-    
+
     let context = `Sandaluci üretim veritabanı aktif. Şu an sistemde ${orderCount} adet AKTİF sipariş bulunmaktadır.`;
-    
+
     if (orderCount === 0) {
-      context += "\n[SİSTEM UYARISI] SİSTEMDE HİÇ SİPARİŞ YOK. Ayça 'Sipariş-Yok Kuralı'na (ORDER GUARD) kesinlikle uymalıdır. Üretimle ilgili hayali bilgi verme, soru sorma.";
+      context +=
+        "\n[SİSTEM UYARISI] SİSTEMDE HİÇ SİPARİŞ YOK. Ayça 'Sipariş-Yok Kuralı'na (ORDER GUARD) kesinlikle uymalıdır. Üretimle ilgili hayali bilgi verme, soru sorma.";
     } else {
-      const orderSummary = activeOrders.map(o => `${o.orderNumber} (${o.customerName})`).join(", ");
+      const orderSummary = activeOrders
+        .map((o) => `${o.orderNumber} (${o.customerName})`)
+        .join(", ");
       context += `\nAktif Siparişler: ${orderSummary}`;
     }
 

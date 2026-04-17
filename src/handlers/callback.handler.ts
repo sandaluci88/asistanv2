@@ -60,34 +60,31 @@ export class CallbackHandler {
 
   // --- Personel Seçimi ---
   private registerStaffSelection() {
-    this.bot.callbackQuery(
-      /^select_dept_staff:(.+)\|(.+)$/,
-      async (ctx) => {
-        const draftId = ctx.match[1] as string;
-        const deptName = ctx.match[2] as string;
-        console.log(`📋 [SELECT] Departman seçimi: ${deptName} (draft: ${draftId})`);
-        const staffList = this.staffService.getStaffByDepartment(deptName);
-        if (staffList.length === 0) {
-          return ctx.answerCallbackQuery(
-            `⚠️ В отделе ${deptName} нет зарегистрированных сотрудников.`,
-          );
-        }
-
-        const keyboard = new InlineKeyboard();
-        staffList.forEach((s) => {
-          keyboard
-            .text(s.name, `aw:${draftId}:${deptName}:${s.name}`)
-            .row();
-        });
-        keyboard.text("🔙 Назад", `back_to_draft:${draftId}`);
-
-        await ctx.editMessageText(
-          `👤 <b>${deptName}</b> — выберите сотрудника:\n\n<i>Выберите имя из списка.</i>`,
-          { parse_mode: "HTML", reply_markup: keyboard },
+    this.bot.callbackQuery(/^select_dept_staff:(.+)\|(.+)$/, async (ctx) => {
+      const draftId = ctx.match[1] as string;
+      const deptName = ctx.match[2] as string;
+      console.log(
+        `📋 [SELECT] Departman seçimi: ${deptName} (draft: ${draftId})`,
+      );
+      const staffList = this.staffService.getStaffByDepartment(deptName);
+      if (staffList.length === 0) {
+        return ctx.answerCallbackQuery(
+          `⚠️ В отделе ${deptName} нет зарегистрированных сотрудников.`,
         );
-        await ctx.answerCallbackQuery();
-      },
-    );
+      }
+
+      const keyboard = new InlineKeyboard();
+      staffList.forEach((s) => {
+        keyboard.text(s.name, `aw:${draftId}:${deptName}:${s.name}`).row();
+      });
+      keyboard.text("🔙 Назад", `back_to_draft:${draftId}`);
+
+      await ctx.editMessageText(
+        `👤 <b>${deptName}</b> — выберите сотрудника:\n\n<i>Выберите имя из списка.</i>`,
+        { parse_mode: "HTML", reply_markup: keyboard },
+      );
+      await ctx.answerCallbackQuery();
+    });
   }
 
   // --- İşçi Atama ---
@@ -96,7 +93,9 @@ export class CallbackHandler {
       const draftId = ctx.match[1] as string;
       const deptName = ctx.match[2] as string;
       const staffName = ctx.match[3] as string;
-      console.log(`👤 [AW] Personel atama: ${staffName} → ${deptName} (draft: ${draftId})`);
+      console.log(
+        `👤 [AW] Personel atama: ${staffName} → ${deptName} (draft: ${draftId})`,
+      );
 
       const draft = this.draftOrderService.getDraft(draftId);
       if (!draft)
@@ -133,9 +132,7 @@ export class CallbackHandler {
       const remainingDepts = Array.from(
         new Set(
           draft.order.items
-            .filter(
-              (i: any) => isManualDept(i.department) && !i.assignedWorker,
-            )
+            .filter((i: any) => isManualDept(i.department) && !i.assignedWorker)
             .map((i: any) => i.department),
         ),
       );
@@ -153,7 +150,10 @@ export class CallbackHandler {
       // Bölüştürme butonları (atanmamış manuel departmanlar için)
       remainingDepts.forEach((d: any) => {
         keyboard
-          .text(`📊 Разделить: ${translateDepartment(d, "ru")}`, `split_mode:${draftId}:${d}`)
+          .text(
+            `📊 Разделить: ${translateDepartment(d, "ru")}`,
+            `split_mode:${draftId}:${d}`,
+          )
           .row();
       });
 
@@ -183,9 +183,7 @@ export class CallbackHandler {
       const unassignedManualDepts = Array.from(
         new Set(
           draft.order.items
-            .filter(
-              (i: any) => isManualDept(i.department) && !i.assignedWorker,
-            )
+            .filter((i: any) => isManualDept(i.department) && !i.assignedWorker)
             .map((i: any) => i.department),
         ),
       );
@@ -210,23 +208,21 @@ export class CallbackHandler {
 
       const autoDepts = (
         Array.from(
-          new Set(
-            draft.order.items.map((i: any) => i.department as string),
-          ),
+          new Set(draft.order.items.map((i: any) => i.department as string)),
         ) as string[]
       ).filter((d) => !isManualDept(d));
 
-      const allDeptsToSend = [
-        ...new Set([...onlyManual, ...autoDepts]),
-      ].sort((a, b) => {
-        const ai = DEPT_FLOW_ORDER.findIndex(
-          (d) => a.includes(d) || d.includes(a),
-        );
-        const bi = DEPT_FLOW_ORDER.findIndex(
-          (d) => b.includes(d) || d.includes(b),
-        );
-        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-      });
+      const allDeptsToSend = [...new Set([...onlyManual, ...autoDepts])].sort(
+        (a, b) => {
+          const ai = DEPT_FLOW_ORDER.findIndex(
+            (d) => a.includes(d) || d.includes(a),
+          );
+          const bi = DEPT_FLOW_ORDER.findIndex(
+            (d) => b.includes(d) || d.includes(b),
+          );
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        },
+      );
 
       let report = { success: [] as string[], failed: [] as string[] };
       if (allDeptsToSend.length > 0) {
@@ -250,17 +246,14 @@ export class CallbackHandler {
         statusMsg += `❌ <b>ОШИБКА:</b> ${report.failed.map((d) => translateDepartment(d, "ru")).join(", ")}\n`;
       }
       if (report.success.length === 0 && report.failed.length === 0) {
-        statusMsg +=
-          "ℹ️ Дополнительное распределение не выполнялось.\n";
+        statusMsg += "ℹ️ Дополнительное распределение не выполнялось.\n";
       }
 
       statusMsg += `\n${buildDistributionSummary(draft.order)}\n\n${visualReport}`;
 
       await ctx.editMessageText(statusMsg, { parse_mode: "HTML" });
 
-      console.log(
-        `✅ [FLOW] Finalize tamamlandı: ${draft.order.orderNumber}`,
-      );
+      console.log(`✅ [FLOW] Finalize tamamlandı: ${draft.order.orderNumber}`);
       this.draftOrderService.removeDraft(draftId);
     });
   }
@@ -278,9 +271,7 @@ export class CallbackHandler {
       if (!hasManual) {
         const autoDepts = (
           Array.from(
-            new Set(
-              draft.order.items.map((i: any) => i.department as string),
-            ),
+            new Set(draft.order.items.map((i: any) => i.department as string)),
           ) as string[]
         ).filter((d) => !isManualDept(d));
 
@@ -319,9 +310,7 @@ export class CallbackHandler {
       const keyboard = new InlineKeyboard();
 
       const deptsInOrder = Array.from(
-        new Set(
-          draft.order.items.map((i: any) => i.department as string),
-        ),
+        new Set(draft.order.items.map((i: any) => i.department as string)),
       ) as string[];
       const relevantManual = deptsInOrder.filter((d) => isManualDept(d));
 
@@ -440,9 +429,7 @@ export class CallbackHandler {
         );
       }
 
-      await ctx.reply(
-        "⏳ Dağıtım başlatılıyor, iş emirleri oluşturuluyor...",
-      );
+      await ctx.reply("⏳ Dağıtım başlatılıyor, iş emirleri oluşturuluyor...");
 
       for (const assign of assignments) {
         const staff = this.staffService.getStaffByName(assign.staffName);
