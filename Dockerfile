@@ -1,6 +1,8 @@
 # Build stage
 FROM node:20-slim AS builder
 
+WORKDIR /app
+
 # Install build dependencies for canvas
 RUN apt-get update && apt-get install -y \
     python3 build-essential pkg-config \
